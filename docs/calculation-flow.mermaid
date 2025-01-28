@@ -1,0 +1,14 @@
+flowchart TD
+    A[Data Collection] -->|Prices & Quantities| B[Total Assets Calculation]
+    B -->|TA = ∑Ai × Pi| C[Total Liabilities Calculation]
+    C -->|TL = ∑Li × Pi| D[Solvency Ratio]
+    D -->|SR = TA/TL × 100| E{Evaluation}
+    E -->|SR < 105%| F[Critical Alert]
+    E -->|105% ≤ SR < 110%| G[High Risk Alert]
+    E -->|SR ≥ 120%| H[Normal State]
+    
+    I[VaR Calculation] -->|VaR = μ - σz| J[Risk Assessment]
+    J --> E
+    
+    K[Liquidity] -->|LCR = HQLA/TNCO| L[Health Index]
+    L -->|HI = w1×SR + w2×LCR| E

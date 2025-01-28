@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #3b82f6;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+}
+
+body {
+  @apply antialiased;
+  @apply text-gray-800;
+}
+
+.container {
+  @apply max-w-7xl;
+  @apply mx-auto;
+}

@@ -1,0 +1,17 @@
+flowchart LR
+    subgraph DataSources[Price Data Sources]
+        C[Chainlink Oracles]
+        B[Band Protocol]
+    end
+
+    subgraph Integration[Price Integration]
+        A[Price Aggregator]
+    end
+
+    subgraph Contract[Smart Contract]
+        S[Solvency Contract]
+    end
+
+    C --> A
+    B --> A
+    A --> S

@@ -1,0 +1,18 @@
+flowchart TB
+    subgraph ApplicationLayer[Application Layer]
+        direction LR
+        D[Dashboards] --- A[Alerts] --- API[APIs]
+    end
+
+    subgraph ProtocolLayer[Protocol Layer]
+        direction LR
+        Assets[Assets] --- Solvency[Solvency] --- History[History]
+    end
+
+    subgraph DataLayer[Data Layer]
+        direction LR
+        Oracles[Oracles] --- Prices[Prices] --- Stats[Statistics]
+    end
+
+    ApplicationLayer --> ProtocolLayer
+    ProtocolLayer --> DataLayer
