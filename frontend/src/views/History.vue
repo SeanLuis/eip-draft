@@ -13,8 +13,8 @@
       </div>
 
       <!-- Historical Chart -->
-      <div class="h-96 mb-6">
-        <HistoryChart :data="historyData" />
+      <div class="h-[600px] mb-6"> <!-- Aumentamos la altura para mejor visualización -->
+        <SolvencyTradingChart :data="historyData" />
       </div>
 
       <!-- Historical Records Table -->
@@ -50,11 +50,26 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import HistoryChart from '../components/HistoryChart.vue'
+import SolvencyTradingChart from '../components/SolvencyTradingChart.vue'
+import { generateVolatilityData } from '../services/mockData'
 
-const startDate = ref('')
-const endDate = ref('')
-const historyData = ref([])
+const historyData = ref(generateVolatilityData())
+
+const startDate = ref('2025-01-28')
+const endDate = ref('2025-01-29')
+
+// Add price change calculations
+const getPriceChanges = () => {
+  return historyData.value.map((current, i) => {
+    if (i === 0) return null;
+    const previous = historyData.value[i-1];
+    return {
+      ethDiff: (current.ethPrice - previous.ethPrice).toFixed(2),
+      btcDiff: (current.btcPrice - previous.btcPrice).toFixed(2),
+      ratioDiff: ((current.solvencyRatio - previous.solvencyRatio) / 100).toFixed(2)
+    };
+  }).filter(change => change !== null);
+};
 
 const fetchHistory = async () => {
   // Here we would fetch historical data from our contract
