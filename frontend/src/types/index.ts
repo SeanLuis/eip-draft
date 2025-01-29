@@ -35,3 +35,17 @@ export interface ProtocolSettings {
     warningThreshold: number;
     oracles: { address: string }[];
 }
+
+export interface ContractAddresses {
+  USDC: string;
+  USDT: string;
+  DAI: string;
+  WETH: string;
+  WBTC: string;
+  USDC_ETH_LP: string;
+  DAI_USDC_LP: string;
+  Protocol_Token: string;
+  MockPriceOracle: string;
+  SolvencyProof: string;
+  OracleAddress: string;
+}

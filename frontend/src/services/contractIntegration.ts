@@ -1,200 +1,154 @@
-import { ethers } from 'ethers';
-import Web3Service from './web3Service';
-import { CONFIG } from '../config';
-import type { SolvencyMetrics, HistoricalDataPoint } from '../types';
-import { SolvencyProof__factory, SolvencyProof } from '../../../typechain-types';
+import { type Address, type WalletClient, type PublicClient, type Hash, getContract } from 'viem'
+import addresses from '../config/addresses.json'
+import SolvencyProofABI from '../../../artifacts/contracts/SolvencyProof/SolvencyProof.sol/SolvencyProof.json'
+import MockPriceOracleABI from '../../../artifacts/contracts/test/MockPriceOracle.sol/MockPriceOracle.json'
 
 export class SolvencyProofService {
-  private contract: SolvencyProof;
-  private web3Service: Web3Service;
-  private oracle: ethers.Signer | null = null;
+  private solvencyProof: any
+  private priceOracle: any
+  private publicClient: PublicClient | null = null
+  private walletClient: WalletClient | null = null
 
-  constructor() {
-    try {
-      this.web3Service = Web3Service.getInstance();
-      const provider = this.web3Service.getProvider();
-      
-      // Agregar log para debug
-      console.log('Initializing contract with:', {
-        address: CONFIG.CONTRACTS.SolvencyProof,
-        provider: provider ? 'Provider Ready' : 'No Provider'
-      });
-      
-      // Usar el método target() para obtener la dirección en ethers v6
-      this.contract = SolvencyProof__factory.connect(
-        CONFIG.CONTRACTS.SolvencyProof,
-        provider
-      );
+  async initialize(publicClient: PublicClient, walletClient: WalletClient): Promise<boolean> {
+    this.publicClient = publicClient
+    this.walletClient = walletClient
 
-      // Verificar que el contrato se inicializó correctamente
-      console.log('Contract initialized:', {
-        address: CONFIG.CONTRACTS.SolvencyProof,
-        target: this.contract.target, // En ethers v6 usamos target en lugar de address
-        network: CONFIG.NETWORK.chainId
-      });
-    } catch (error) {
-      console.error('Failed to initialize:', error);
-      throw error;
-    }
+    // Initialize contract instances with correct typing
+    this.solvencyProof = getContract({
+      address: addresses.solvencyProof as Address,
+      abi: SolvencyProofABI.abi,
+      client: this.publicClient
+    })
+
+    this.priceOracle = getContract({
+      address: addresses.priceOracle as Address,
+      abi: MockPriceOracleABI.abi,
+      client: this.publicClient
+    })
+
+    return true
   }
 
-  public async initialize(): Promise<boolean> {
-    try {
-      // Usar Account #1 (oracle) en lugar de Account #0 (owner)
-      this.oracle = await this.web3Service.getSigner(1); // Cambiar a índice 1
-      const oracleAddress = await this.oracle.getAddress();
-      console.log('Oracle initialized:', oracleAddress);
-
-      // Verificar que el address tiene permisos de oracle
-      const isOracle = await this.contract.assetOracles(oracleAddress);
-      console.log('Is oracle authorized?:', isOracle);
-
-      if (!isOracle) {
-        throw new Error('Account is not authorized as oracle');
+  async write(contractInstance: any, method: string, args: any[]): Promise<Hash> {
+    if (!this.walletClient || !this.publicClient) throw new Error('Clients not initialized')
+    
+    const { request } = await contractInstance.simulate[method](
+      args,
+      { 
+        account: this.walletClient.account,
+        chain: this.walletClient.chain
       }
-
-      return true;
-    } catch (error) {
-      console.error('Initialization error:', error);
-      return false;
-    }
+    )
+    
+    const hash = await this.walletClient.writeContract(request)
+    
+    // Esperar a que la transacción se mine
+    const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
+    return receipt.transactionHash
   }
 
-  public async updateAssets(
-    tokens: string[],
+  async updateAssets(
+    tokens: Address[],
     amounts: bigint[],
     values: bigint[]
-  ): Promise<ethers.ContractTransactionResponse> {
-    if (!this.oracle) {
-      throw new Error('Oracle not initialized');
+  ) {
+    if (!this.solvencyProof || !this.walletClient) {
+      throw new Error('Service not initialized')
     }
 
-    try {
-      console.log('updateAssets input:', {
-        tokens,
-        amounts: amounts.map(a => a.toString()),
-        values: values.map(v => v.toString())
-      });
-
-      // Use proper typing for fragments and filter only FunctionFragment
-      const functionNames = Object.values(this.contract.interface.fragments)
-        .filter((fragment): fragment is ethers.FunctionFragment => 
-          fragment.type === 'function')
-        .map(fragment => fragment.selector);
-      
-      console.log('Available contract functions:', functionNames);
-
-      // Use direct contract method instead of creating new instance
-      const tx = await this.contract.connect(this.oracle).updateAssets(
-        tokens,
-        amounts,
-        values,
-        {
-          from: await this.oracle.getAddress(),
-          gasLimit: 500000
-        }
-      );
-      
-      console.log('Transaction sent:', {
-        hash: tx.hash,
-        from: await this.oracle.getAddress(),
-        to: this.contract.target
-      });
-
-      const receipt = await tx.wait();
-      console.log('Transaction mined:', receipt);
-
-      return tx;
-    } catch (error: any) {
-      console.error('UpdateAssets detailed error:', {
-        error,
-        errorName: error.name,
-        errorMessage: error.message,
-        contractAddress: this.contract.target,
-        oracleAddress: await this.oracle.getAddress(),
-        params: {
-          tokens,
-          amounts: amounts.map(a => a.toString()),
-          values: values.map(v => v.toString())
-        }
-      });
-      throw error;
-    }
+    return this.write(this.solvencyProof, 'updateAssets', [tokens, amounts, values])
   }
 
-  public async simulateMarketCrash(
-    tokens: string[],
+  async updateLiabilities(
+    tokens: Address[],
     amounts: bigint[],
     values: bigint[]
-  ): Promise<any> {
-    return this.updateAssets(tokens, amounts, values);
+  ) {
+    if (!this.solvencyProof || !this.walletClient) {
+      throw new Error('Service not initialized')
+    }
+
+    return this.write(this.solvencyProof, 'updateLiabilities', [tokens, amounts, values])
   }
 
-  public async simulateVolatility(
-    token: string,
-    amount: bigint,
-    value: bigint
-  ): Promise<any> {
-    return this.updateAssets([token], [amount], [value]);
+  async verifySolvency(): Promise<[boolean, bigint]> {
+    if (!this.solvencyProof) {
+      throw new Error('Service not initialized')
+    }
+
+    return this.solvencyProof.read.verifySolvency()
   }
 
-  public async connectWithSigner(signerIndex: number = 0): Promise<void> {
-    const signer = await this.web3Service.getSigner(signerIndex);
-    this.contract = this.contract.connect(signer);
+  async getSolvencyRatio(): Promise<bigint> {
+    if (!this.solvencyProof) {
+      throw new Error('Service not initialized')
+    }
+
+    return this.solvencyProof.read.getSolvencyRatio()
   }
 
-  public async getSolvencyMetrics(): Promise<SolvencyMetrics> {
-    try {
-      const [isSolvent, healthFactor] = await this.contract.verifySolvency();
-      const assets = await this.contract.getProtocolAssets();
-      const liabilities = await this.contract.getProtocolLiabilities();
-      
-      return {
-        totalAssets: Number(assets.values.reduce((a: bigint, b: bigint) => a + b, 0n)),
-        totalLiabilities: Number(liabilities.values.reduce((a: bigint, b: bigint) => a + b, 0n)),
-        solvencyRatio: Number(healthFactor),
-        timestamp: Number(assets.timestamp),
-        isSolvent,
-      };
-    } catch (error) {
-      console.error('Error fetching metrics:', error);
-      throw error;
+  async getSolvencyMetrics() {
+    if (!this.solvencyProof) {
+      throw new Error('Service not initialized')
+    }
+
+    const [isSolvent, healthFactor] = await this.verifySolvency()
+    const ratio = await this.getSolvencyRatio()
+
+    return {
+      isSolvent,
+      healthFactor,
+      ratio
     }
   }
 
-  public async getHistoricalData(
+  async getSolvencyHistory(
     startTime: number,
     endTime: number
-  ): Promise<HistoricalDataPoint[]> {
-    try {
-      const [timestamps, ratios] = await this.contract.getSolvencyHistory(
-        BigInt(startTime),
-        BigInt(endTime)
-      );
-
-      return timestamps.map((timestamp: bigint, index: number) => ({
-        timestamp: Number(timestamp),
-        solvencyRatio: Number(ratios[index]),
-        totalAssets: 0,
-        totalLiabilities: 0,
-        status: this.getSolvencyStatus(Number(ratios[index])),
-        ethPrice: 0,
-        btcPrice: 0 
-      }));
-    } catch (error) {
-      console.error('Error fetching historical data:', error);
-      throw error;
+  ): Promise<[bigint[], bigint[]]> {
+    if (!this.solvencyProof) {
+      throw new Error('Service not initialized')
     }
+
+    return this.solvencyProof.read.getSolvencyHistory([startTime, endTime])
   }
 
-  public async getContract(): Promise<typeof this.contract> {
-    return this.contract;
+  async simulateMarketCrash(
+    tokens: Address[],
+    amounts: bigint[],
+    newPrices: bigint[]
+  ) {
+    if (!this.priceOracle || !this.walletClient) {
+      throw new Error('Service not initialized')
+    }
+
+    // Update prices in oracle
+    for (let i = 0; i < tokens.length; i++) {
+      await this.write(this.priceOracle, 'setPrice', [tokens[i], newPrices[i]])
+    }
+
+    // Update asset values
+    const values = amounts.map((amount, i) => 
+      (amount * newPrices[i]) / (10n ** 8n)
+    )
+
+    return this.updateAssets(tokens, amounts, values)
   }
 
-  private getSolvencyStatus(ratio: number): 'HEALTHY' | 'WARNING' | 'HIGH_RISK' | 'CRITICAL' {
-    if (ratio >= 150) return 'HEALTHY';
-    if (ratio >= 120) return 'WARNING';
-    if (ratio >= 105) return 'HIGH_RISK';
-    return 'CRITICAL';
+  async simulateVolatility(
+    token: Address,
+    amount: bigint,
+    newPrice: bigint
+  ) {
+    if (!this.priceOracle || !this.walletClient) {
+      throw new Error('Service not initialized')
+    }
+
+    // Update price in oracle
+    await this.write(this.priceOracle, 'setPrice', [token, newPrice])
+
+    // Update asset value
+    const value = (amount * newPrice) / (10n ** 8n)
+    return this.updateAssets([token], [amount], [value])
   }
 }

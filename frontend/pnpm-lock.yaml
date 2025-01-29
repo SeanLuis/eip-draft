@@ -30,7 +30,7 @@ importers:
         specifier: ^2.1.7
         version: 2.3.1(typescript@5.7.3)(vue@3.5.13(typescript@5.7.3))
       viem:
-        specifier: ^2.7.1
+        specifier: ^2.22.15
         version: 2.22.15(bufferutil@4.0.9)(typescript@5.7.3)(utf-8-validate@5.0.10)
       vue:
         specifier: ^3.4.15

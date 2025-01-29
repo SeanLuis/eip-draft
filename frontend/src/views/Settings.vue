@@ -17,6 +17,33 @@
         </div>
       </div>
 
+      <!-- Network Connection -->
+      <div class="mb-6 bg-white p-4 rounded-lg border border-gray-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-medium">Network Connection</h3>
+            <p class="text-sm text-gray-600">
+              {{ isConnected ? `Connected as ${accountType}` : 'Not connected' }}
+            </p>
+          </div>
+          <div class="flex gap-2">
+            <button
+              v-for="type in ['deployer', 'oracle', 'user']"
+              :key="type"
+              @click="() => connectAs(type)"
+              :class="[
+                'px-4 py-2 rounded-md text-sm font-medium',
+                accountType === type
+                  ? 'bg-green-100 text-green-700 border border-green-300'
+                  : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
+              ]"
+            >
+              Connect as {{ type }}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Error Alert -->
       <div v-if="error" class="bg-[#ffebe9] border border-[#ff8182] text-[#cf222e] px-4 py-3 rounded-md mb-6">
         {{ error }}
@@ -33,9 +60,9 @@
               <label class="block text-sm font-medium text-[#57606a] mb-1">Oracle Address</label>
               <div class="flex items-center space-x-2">
                 <code class="bg-[#f6f8fa] px-2 py-1 rounded text-sm font-mono text-[#24292f]">
-                  {{ CONFIG.CONTRACTS.MockPriceOracle }}
+                  {{ addresses.priceOracle }}
                 </code>
-                <button @click="copyToClipboard(CONFIG.CONTRACTS.MockPriceOracle)" class="text-[#57606a] hover:text-[#24292f]">
+                <button @click="copyToClipboard(addresses.priceOracle)" class="text-[#57606a] hover:text-[#24292f]">
                   <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 010 14.25v-7.5z"/>
                     <path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/>
@@ -123,7 +150,7 @@
               <label class="block text-sm font-medium text-[#57606a]">Oracle Address</label>
               <div class="mt-1 flex items-center space-x-2">
                 <code class="flex-1 bg-[#f6f8fa] px-2 py-1 rounded text-sm font-mono text-[#24292f]">
-                  {{ CONFIG.CONTRACTS.MockPriceOracle }}
+                  {{ addresses.priceOracle }}
                 </code>
               </div>
             </div>
@@ -195,9 +222,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { SolvencyProofService } from '../services/contractIntegration'
-import Web3Service from '../services/web3Service'
 import { ethers } from 'ethers'
-import { CONFIG } from '../config'
+import addresses from '../config/addresses.json'
+import { useWeb3 } from '../composables/useWeb3'
 
 // Define thresholds configuration
 const thresholds = {
@@ -227,16 +254,44 @@ const copyToClipboard = async (text: string) => {
   }
 }
 
-// Definir los tokens disponibles con sus direcciones y precios iniciales
-const TOKEN_LIST = {
-    USDC: "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    USDT: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    DAI: "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
-    WETH: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    WBTC: "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-    USDC_ETH_LP: "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
-    DAI_USDC_LP: "0x0165878A594ca255338adfa4d48449f69242Eb8F"
+// Corregir la definición de TOKEN_LIST para usar las direcciones directamente de CONFIG
+const TOKEN_LIST: Record<string, { address: string, decimals: number, initialPrice: bigint }> = {
+  WETH: {
+    address: addresses.tokens.weth,
+    decimals: 18,
+    initialPrice: 2000n * (10n ** 8n)
+  },
+  WBTC: {
+    address: addresses.tokens.wbtc,
+    decimals: 18,
+    initialPrice: 35000n * (10n ** 8n)
+  },
+  USDC: {
+    address: addresses.tokens.usdc,
+    decimals: 6,
+    initialPrice: 1n * (10n ** 8n)
+  },
+  USDT: {
+    address: addresses.tokens.usdt,
+    decimals: 6,
+    initialPrice: 1n * (10n ** 8n)
+  },
+  DAI: {
+    address: addresses.tokens.dai,
+    decimals: 18,
+    initialPrice: 1n * (10n ** 8n)
+  },
+  "USDC-ETH-LP": {
+    address: addresses.tokens.usdcEthLp,
+    decimals: 18,
+    initialPrice: 1000n * (10n ** 8n)
+  },
+  "DAI-USDC-LP": {
+    address: addresses.tokens.daiUsdcLp,
+    decimals: 18,
+    initialPrice: 2n * (10n ** 8n)
   }
+}
 
 const settings = ref({
   criticalThreshold: 105,
@@ -248,7 +303,7 @@ const settings = ref({
     { token: 'USDC', amount: '1000000', price: '1', decimals: 6 }
   ],
   oracles: [
-    { address: CONFIG.CONTRACTS.MockPriceOracle, interval: 3600 }
+    { address: addresses.priceOracle, interval: 3600 }
   ],
   simulation: {
     ethDrop: 50,
@@ -259,56 +314,99 @@ const settings = ref({
 })
 
 const solvencyService = ref<SolvencyProofService>()
-const web3Service = Web3Service.getInstance()
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 
+// Add Web3 composable
+const { 
+  isConnected, 
+  account, 
+  connect: connectWeb3, 
+  disconnect 
+} = useWeb3()
+
+const accountType = ref<'deployer' | 'oracle' | 'user'>('deployer')
+
+// Connect function
+const connectAs = async (type: 'deployer' | 'oracle' | 'user') => {
+  try {
+    await connectWeb3(type)
+    accountType.value = type
+    
+    // Reinitialize services with new account
+    if (solvencyService.value) {
+      await setupInitialState()
+    }
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to connect'
+  }
+}
+
 onMounted(async () => {
   try {
-    console.log('Mounting Settings component...');
-    solvencyService.value = new SolvencyProofService();
+    const { connect, publicClient, walletClient } = useWeb3()
+    // Conectar como oracle en lugar de deployer
+    await connect('oracle')
     
-    // Initialize service with oracle
-    const initialized = await solvencyService.value.initialize();
-    if (!initialized) {
-      throw new Error('Failed to initialize service');
+    if (!publicClient.value || !walletClient.value) {
+      throw new Error('Failed to initialize Web3')
     }
     
-    console.log('Service initialized, setting up initial state...');
-    await setupInitialState();
+    solvencyService.value = new SolvencyProofService()
+    const initialized = await solvencyService.value.initialize(
+      publicClient.value,
+      walletClient.value
+    )
+    
+    if (!initialized) {
+      throw new Error('Failed to initialize service')
+    }
+    
+    await setupInitialState()
   } catch (e) {
-    console.error('Mount error:', e);
-    error.value = e instanceof Error ? e.message : 'Failed to initialize';
+    console.error('Mount error:', e)
+    error.value = e instanceof Error ? e.message : 'Failed to initialize'
   }
-});
+})
 
 const setupInitialState = async () => {
   if (!solvencyService.value) {
-    console.error('Service not available');
-    return;
+    console.error('Service not available')
+    return
   }
   
   try {
-    const tokens = settings.value.assets.map(a => TOKEN_LIST[a.token].address);
-    const amounts = settings.value.assets.map(a => 
-      ethers.parseUnits(a.amount, a.decimals)
-    );
-    const values = settings.value.assets.map(a => {
-      const amount = ethers.parseUnits(a.amount, a.decimals);
-      const price = ethers.parseUnits(a.price, 8); // Oracle uses 8 decimals
-      return (amount * price / ethers.parseUnits('1', a.decimals));
-    });
+    const tokens = settings.value.assets.map(a => TOKEN_LIST[a.token].address)
     
-    console.log('Updating initial state with:', {
+    const amounts = settings.value.assets.map(a => 
+      ethers.parseUnits(
+        a.amount.toString(), 
+        TOKEN_LIST[a.token].decimals
+      )
+    )
+
+    const values = settings.value.assets.map(a => {
+      const amount = ethers.parseUnits(
+        a.amount.toString(), 
+        TOKEN_LIST[a.token].decimals
+      )
+      const price = ethers.parseUnits(
+        a.price.toString(), 
+        8 // Oracle price decimals
+      )
+      return (amount * price) / (10n ** BigInt(TOKEN_LIST[a.token].decimals))
+    })
+
+    console.log('Setting initial state:', {
       tokens,
       amounts: amounts.map(a => a.toString()),
       values: values.map(v => v.toString())
-    });
+    })
 
-    await solvencyService.value.updateAssets(tokens, amounts, values);
+    await solvencyService.value.updateAssets(tokens, amounts, values)
   } catch (e) {
-    console.error('Setup state error:', e);
-    error.value = e instanceof Error ? e.message : 'Failed to setup initial state';
+    console.error('Setup state error:', e)
+    error.value = e instanceof Error ? e.message : 'Failed to setup initial state'
   }
 }
 
@@ -385,23 +483,42 @@ const simulateVolatility = async () => {
 }
 
 const saveSettings = async () => {
-  if (!solvencyService.value) return
+  if (!solvencyService.value || !isConnected.value) {
+    error.value = 'Not connected or service not initialized'
+    return
+  }
   
   isLoading.value = true
   try {
     const tokens = settings.value.assets.map(a => TOKEN_LIST[a.token].address)
+    
     const amounts = settings.value.assets.map(a => 
-      ethers.parseUnits(a.amount, a.decimals)
-    )
-    const values = settings.value.assets.map(a => 
       ethers.parseUnits(
-        (Number(a.amount) * Number(a.price)).toString(),
-        8
+        a.amount.toString(), 
+        TOKEN_LIST[a.token].decimals
       )
     )
+
+    const values = settings.value.assets.map(a => {
+      const amount = ethers.parseUnits(
+        a.amount.toString(), 
+        TOKEN_LIST[a.token].decimals
+      )
+      const price = ethers.parseUnits(
+        a.price.toString(), 
+        8 // Oracle price decimals
+      )
+      return (amount * price) / (10n ** BigInt(TOKEN_LIST[a.token].decimals))
+    })
+
+    console.log('Saving settings with:', {
+      tokens,
+      amounts: amounts.map(a => a.toString()),
+      values: values.map(v => v.toString())
+    })
     
-    const tx = await solvencyService.value.updateAssets(tokens, amounts, values)
-    await tx.wait()
+    const hash = await solvencyService.value.updateAssets(tokens, amounts, values)
+    console.log('Transaction hash:', hash)
     console.log('Settings saved successfully')
   } catch (e) {
     console.error('Save settings error:', e)

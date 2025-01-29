@@ -1,15 +1,61 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import type { ContractTransactionResponse } from "ethers";
 import { 
     SolvencyProof,
     MockToken,
     MockPriceOracle 
 } from "../typechain-types";
 import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { time } from "@nomicfoundation/hardhat-network-helpers";
+import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 
-function printTestSummary(title: string, data: any) {
+// Constants for price simulation
+const PRICE_DECIMALS = 8n;
+const INITIAL_ETH_PRICE = 2000n * (10n ** PRICE_DECIMALS); // $2000
+const INITIAL_BTC_PRICE = 35000n * (10n ** PRICE_DECIMALS); // $35000
+
+// Types for test data
+interface PriceHistoryEntry {
+    step: number;
+    ethPrice: bigint;
+    btcPrice: bigint;
+    timestamp: number;
+    ratio?: bigint;
+}
+
+interface TestSummaryData {
+    metrics?: {
+        start: number;
+        end: number;
+        recordCount: number;
+    };
+    prices?: PriceHistoryEntry[];
+    solvency?: {
+        isSolvent: boolean;
+        healthFactor: bigint;
+        timestamp: number;
+    };
+}
+
+// Test context interface
+interface TestContext {
+    solvencyProof: SolvencyProof;
+    mockPriceOracle: MockPriceOracle;
+    usdc: MockToken;
+    usdt: MockToken;
+    dai: MockToken;
+    weth: MockToken;
+    wbtc: MockToken;
+    usdcEthLp: MockToken;
+    daiUsdcLp: MockToken;
+    protocolToken: MockToken;
+    owner: HardhatEthersSigner;
+    oracle: HardhatEthersSigner;
+    users: HardhatEthersSigner[];
+}
+
+function printTestSummary(title: string, data: TestSummaryData): void {
     console.log('\n' + '='.repeat(50));
     console.log(`Test Summary: ${title}`);
     console.log('-'.repeat(50));
@@ -44,73 +90,64 @@ function printTestSummary(title: string, data: any) {
 }
 
 describe("SolvencyProof Real World Scenarios", function () {
-    let solvencyProof: SolvencyProof;
-    let mockPriceOracle: MockPriceOracle;
-    
-    // Stablecoins
-    let usdc: MockToken;
-    let usdt: MockToken;
-    let dai: MockToken;
-    
-    // Volatile assets
-    let weth: MockToken;
-    let wbtc: MockToken;
-    
-    // LP tokens
-    let usdcEthLp: MockToken;
-    let daiUsdcLp: MockToken;
-    
-    // Protocol tokens
-    let protocolToken: MockToken;
-    
-    let owner: HardhatEthersSigner;
-    let oracle: HardhatEthersSigner;
-    let users: HardhatEthersSigner[];
-    
-    // Price simulation parameters
-    const PRICE_DECIMALS = 8n;
-    const INITIAL_ETH_PRICE = 2000n * (10n ** PRICE_DECIMALS); // $2000
-    const INITIAL_BTC_PRICE = 35000n * (10n ** PRICE_DECIMALS); // $35000
-    
-    beforeEach(async function () {
-        [owner, oracle, ...users] = await ethers.getSigners();
+    // Declare variables at the top level so they're accessible in helper functions
+    let context: TestContext;
+
+    async function deployContractsFixture(): Promise<TestContext> {
+        const [owner, oracle, ...users] = await ethers.getSigners();
+
+        console.log("\nTest Deployment Addresses:");
+        console.log("Owner:", owner.address);
+        console.log("Oracle:", oracle.address);
 
         // Deploy contracts using correct typing
         const MockTokenFactory = await ethers.getContractFactory("MockToken");
         const MockPriceOracleFactory = await ethers.getContractFactory("MockPriceOracle");
         const SolvencyProofFactory = await ethers.getContractFactory("SolvencyProof");
 
-        // Deploy tokens
-        usdc = await MockTokenFactory.deploy("USDC", "USDC") as unknown as MockToken;
+        // Deploy tokens and log addresses
+        console.log("\nDeploying tokens...");
+        const usdc = await MockTokenFactory.deploy("USDC", "USDC") as unknown as MockToken;
         await usdc.waitForDeployment();
+        console.log("USDC deployed to:", await usdc.getAddress());
         
-        usdt = await MockTokenFactory.deploy("USDT", "USDT") as unknown as MockToken;
+        const usdt = await MockTokenFactory.deploy("USDT", "USDT") as unknown as MockToken;
         await usdt.waitForDeployment();
+        console.log("USDT deployed to:", await usdt.getAddress());
         
-        dai = await MockTokenFactory.deploy("DAI", "DAI") as unknown as MockToken;
+        const dai = await MockTokenFactory.deploy("DAI", "DAI") as unknown as MockToken;
         await dai.waitForDeployment();
+        console.log("DAI deployed to:", await dai.getAddress());
         
-        weth = await MockTokenFactory.deploy("WETH", "WETH") as unknown as MockToken;
+        const weth = await MockTokenFactory.deploy("WETH", "WETH") as unknown as MockToken;
         await weth.waitForDeployment();
+        console.log("WETH deployed to:", await weth.getAddress());
         
-        wbtc = await MockTokenFactory.deploy("WBTC", "WBTC") as unknown as MockToken;
+        const wbtc = await MockTokenFactory.deploy("WBTC", "WBTC") as unknown as MockToken;
         await wbtc.waitForDeployment();
+        console.log("WBTC deployed to:", await wbtc.getAddress());
         
-        usdcEthLp = await MockTokenFactory.deploy("USDC-ETH LP", "LP1") as unknown as MockToken;
+        const usdcEthLp = await MockTokenFactory.deploy("USDC-ETH LP", "LP1") as unknown as MockToken;
         await usdcEthLp.waitForDeployment();
+        console.log("USDC-ETH LP deployed to:", await usdcEthLp.getAddress());
         
-        daiUsdcLp = await MockTokenFactory.deploy("DAI-USDC LP", "LP2") as unknown as MockToken;
+        const daiUsdcLp = await MockTokenFactory.deploy("DAI-USDC LP", "LP2") as unknown as MockToken;
         await daiUsdcLp.waitForDeployment();
+        console.log("DAI-USDC LP deployed to:", await daiUsdcLp.getAddress());
         
-        protocolToken = await MockTokenFactory.deploy("Protocol", "PROT") as unknown as MockToken;
+        const protocolToken = await MockTokenFactory.deploy("Protocol", "PROT") as unknown as MockToken;
         await protocolToken.waitForDeployment();
+        console.log("Protocol Token deployed to:", await protocolToken.getAddress());
 
-        // Deploy price oracle and solvency proof
-        mockPriceOracle = await MockPriceOracleFactory.deploy() as unknown as MockPriceOracle;
+        // Deploy core contracts and log addresses
+        console.log("\nDeploying core contracts...");
+        const mockPriceOracle = await MockPriceOracleFactory.deploy() as unknown as MockPriceOracle;
         await mockPriceOracle.waitForDeployment();
+        console.log("MockPriceOracle deployed to:", await mockPriceOracle.getAddress());
         
-        solvencyProof = await SolvencyProofFactory.deploy() as unknown as SolvencyProof;
+        const solvencyProof = await SolvencyProofFactory.deploy() as unknown as SolvencyProof;
         await solvencyProof.waitForDeployment();
+        console.log("SolvencyProof deployed to:", await solvencyProof.getAddress());
 
         // Setup initial prices using BigInt operations
         await mockPriceOracle.setPrice(await weth.getAddress(), INITIAL_ETH_PRICE);
@@ -123,26 +160,46 @@ describe("SolvencyProof Real World Scenarios", function () {
         await mockPriceOracle.setPrice(await protocolToken.getAddress(), 5n * (10n ** PRICE_DECIMALS));
 
         await solvencyProof.setOracle(await oracle.getAddress(), true);
+
+        return {
+            solvencyProof,
+            mockPriceOracle,
+            usdc,
+            usdt,
+            dai,
+            weth,
+            wbtc,
+            usdcEthLp,
+            daiUsdcLp,
+            protocolToken,
+            owner,
+            oracle,
+            users
+        };
+    }
+
+    // Initialize context before each test
+    beforeEach(async function () {
+        context = await loadFixture(deployContractsFixture);
     });
 
     describe("Market Crash Scenario", function() {
         it("Should handle rapid price movements and maintain solvency tracking", async function() {
-            // Initial healthy state
-            await setupInitialProtocolState();
-            let [_isSolvent, _healthFactor] = await solvencyProof.verifySolvency();
+            await setupInitialProtocolState(context);
+            let [_isSolvent, _healthFactor] = await context.solvencyProof.verifySolvency();
             expect(_isSolvent).to.be.true;
             expect(_healthFactor).to.be.gt(12000n); // >120%
 
             // Simulate market crash
-            await simulateMarketCrash();
-            [_isSolvent, _healthFactor] = await solvencyProof.verifySolvency();
+            await simulateMarketCrash(context);
+            [_isSolvent, _healthFactor] = await context.solvencyProof.verifySolvency();
             
             // Verify risk alerts were emitted
-            await expect(updateProtocolMetrics())
-                .to.emit(solvencyProof, "RiskAlert")
+            await expect(updateProtocolMetrics(context))
+                .to.emit(context.solvencyProof, "RiskAlert")
                 .withArgs("CRITICAL_SOLVENCY", anyValue, anyValue, anyValue);
 
-            const [isSolvent, healthFactor] = await solvencyProof.verifySolvency();
+            const [isSolvent, healthFactor] = await context.solvencyProof.verifySolvency();
             printTestSummary("Market Crash", {
                 solvency: {
                     isSolvent,
@@ -153,16 +210,15 @@ describe("SolvencyProof Real World Scenarios", function () {
         });
 
         it("Should track historical metrics during volatility", async function() {
-            // First set up initial state but don't include in test window
-            await setupInitialProtocolState();
+            await setupInitialProtocolState(context);
             
             // Add initial liabilities to ensure meaningful ratios
-            const tokens = [await weth.getAddress()];
+            const tokens = [await context.weth.getAddress()];
             const liabilityAmount = ethers.parseEther("0.5"); // 0.5 ETH liability
-            const price = await mockPriceOracle.getPrice(await weth.getAddress());
+            const price = await context.mockPriceOracle.getPrice(await context.weth.getAddress());
             const liabilityValue = (liabilityAmount * price) / (10n ** PRICE_DECIMALS);
             
-            await solvencyProof.connect(oracle).updateLiabilities(
+            await context.solvencyProof.connect(context.oracle).updateLiabilities(
                 tokens,
                 [liabilityAmount],
                 [liabilityValue]
@@ -177,13 +233,13 @@ describe("SolvencyProof Real World Scenarios", function () {
     
             // Record exactly 5 price points
             for (let i = 0; i < 5; i++) {
-                await simulateMarketVolatility(i);
+                await simulateMarketVolatility(context, i);
                 
                 // Capture prices before updating metrics
-                const currentEthPrice = await mockPriceOracle.getPrice(await weth.getAddress());
-                const currentBtcPrice = await mockPriceOracle.getPrice(await wbtc.getAddress());
+                const currentEthPrice = await context.mockPriceOracle.getPrice(await context.weth.getAddress());
+                const currentBtcPrice = await context.mockPriceOracle.getPrice(await context.wbtc.getAddress());
                 
-                const tx = await updateProtocolMetrics();
+                const tx = await updateProtocolMetrics(context);
                 await tx.wait();
                 
                 // Store prices with their corresponding update
@@ -200,7 +256,7 @@ describe("SolvencyProof Real World Scenarios", function () {
             }
 
             const endTime = await time.latest();
-            const [timestamps, ratios] = await solvencyProof.getSolvencyHistory(
+            const [timestamps, ratios] = await context.solvencyProof.getSolvencyHistory(
                 startTime,
                 endTime
             );
@@ -263,6 +319,18 @@ describe("SolvencyProof Real World Scenarios", function () {
 
     describe("Complex Asset/Liability Scenarios", function() {
         it("Should handle multiple asset types with different risk profiles", async function() {
+            const { 
+                solvencyProof, 
+                mockPriceOracle,
+                weth,
+                wbtc,
+                usdc,
+                dai,  // Get dai from context
+                usdcEthLp,
+                protocolToken,
+                oracle 
+            } = context;
+
             // Setup complex portfolio
             const tokens = await Promise.all([
                 weth.getAddress(),
@@ -281,8 +349,8 @@ describe("SolvencyProof Real World Scenarios", function () {
             ];
 
             // Calculate values based on current prices
-            const values = await Promise.all(
-                tokens.map(async (token, i) => {
+            const values: bigint[] = await Promise.all(
+                tokens.map(async (token: string, i: number): Promise<bigint> => {
                     const price = await mockPriceOracle.getPrice(token);
                     return (amounts[i] * price) / (10n ** 8n); // Adjust for oracle decimals
                 })
@@ -323,29 +391,33 @@ describe("SolvencyProof Real World Scenarios", function () {
     });
 
     // Helper functions
-    async function setupInitialProtocolState() {
-        const tokens = [
+    async function setupInitialProtocolState(ctx: TestContext): Promise<void> {
+        const { solvencyProof, weth, wbtc, usdc, oracle, mockPriceOracle } = ctx;
+        
+        const tokens: string[] = [
             await weth.getAddress(),
             await wbtc.getAddress(),
             await usdc.getAddress()
         ];
         
-        const amounts = [
+        const amounts: bigint[] = [
             ethers.parseEther("1000"),      // 1000 ETH
             ethers.parseEther("100"),       // 100 BTC
             ethers.parseUnits("1000000", 6) // 1M USDC
         ];
 
-        const values = await Promise.all(tokens.map(async (token, i) => {
-            const price = await mockPriceOracle.getPrice(token);
-            return (amounts[i] * price) / (10n ** 8n); // Adjust for oracle decimals
-        }));
+        const values: bigint[] = await Promise.all(
+            tokens.map(async (token: string, i: number): Promise<bigint> => {
+                const price = await mockPriceOracle.getPrice(token);
+                return (amounts[i] * price) / (10n ** 8n); // Adjust for oracle decimals
+            })
+        );
 
         await solvencyProof.connect(oracle).updateAssets(tokens, amounts, values);
 
         // Set initial liabilities (50% of assets)
-        const liabilityAmounts = amounts.map(amount => amount / 2n);
-        const liabilityValues = values.map(value => value / 2n);
+        const liabilityAmounts = amounts.map((amount: bigint): bigint => amount / 2n);
+        const liabilityValues = values.map((value: bigint): bigint => value / 2n);
 
         await solvencyProof.connect(oracle).updateLiabilities(
             tokens,
@@ -354,7 +426,9 @@ describe("SolvencyProof Real World Scenarios", function () {
         );
     }
 
-    async function simulateMarketCrash() {
+    async function simulateMarketCrash(ctx: TestContext): Promise<void> {
+        const { mockPriceOracle, weth, wbtc, usdcEthLp, protocolToken } = ctx;
+        
         await mockPriceOracle.setPrice(
             await weth.getAddress(), 
             INITIAL_ETH_PRICE / 2n
@@ -367,7 +441,12 @@ describe("SolvencyProof Real World Scenarios", function () {
         await mockPriceOracle.setPrice(await protocolToken.getAddress(), 1n * (10n ** PRICE_DECIMALS));
     }
 
-    async function simulateMarketVolatility(step: number) {
+    async function simulateMarketVolatility(
+        ctx: TestContext, 
+        step: number
+    ): Promise<void> {
+        const { mockPriceOracle, weth, wbtc, usdc } = ctx;
+        
         const volatility = Math.sin(step) * 0.1;
         // Ensure we have a minimum price even with volatility
         const ethPrice = INITIAL_ETH_PRICE * BigInt(Math.floor((1 + volatility) * 100)) / 100n;
@@ -390,7 +469,11 @@ describe("SolvencyProof Real World Scenarios", function () {
         );
     }
 
-    async function updateProtocolMetrics() {
+    async function updateProtocolMetrics(
+        ctx: TestContext
+    ): Promise<ContractTransactionResponse> {
+        const { solvencyProof, weth, mockPriceOracle, oracle } = ctx;
+        
         const tokens = [await weth.getAddress()];
         const amounts = [ethers.parseEther("1")];
         const currentPrice = await mockPriceOracle.getPrice(await weth.getAddress());
