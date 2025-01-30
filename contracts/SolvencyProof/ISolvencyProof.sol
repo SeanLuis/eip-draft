@@ -2,15 +2,8 @@
 pragma solidity ^0.8.20;
 
 /**
- * @title ISolvencyProof Interface
- * @notice Standard interface for implementing solvency proofs in DeFi protocols
- * @dev This interface defines the core functionality for tracking and verifying protocol solvency
- * 
- * The interface implements a comprehensive system for:
- * - Asset and liability tracking
- * - Solvency ratio calculations
- * - Risk monitoring and alerts
- * - Historical data management
+ * @title ISolvencyProof - Standard Interface for DeFi Protocol Solvency
+ * @dev Defines core functionality for verifying and tracking protocol solvency
  */
 interface ISolvencyProof {
     /**
@@ -59,13 +52,13 @@ interface ISolvencyProof {
      * 
      * @param totalAssets Sum of all asset values in ETH
      * @param totalLiabilities Sum of all liability values in ETH
-     * @param solvencyRatio Current solvency ratio (base 10000)
+     * @param healthFactor Health factor calculated as totalAssets / totalLiabilities
      * @param timestamp Update timestamp
      */
     event SolvencyMetricsUpdated(
         uint256 totalAssets,
         uint256 totalLiabilities,
-        uint256 solvencyRatio,
+        uint256 healthFactor,
         uint256 timestamp
     );
 
@@ -73,67 +66,79 @@ interface ISolvencyProof {
      * @dev Emitted when risk thresholds are breached
      * @notice Alerts stakeholders of potential solvency risks
      * 
-     * @param riskType Type of risk detected (e.g., "CRITICAL_SOLVENCY", "LOW_SOLVENCY")
+     * @param riskLevel Risk level indicating severity of the breach (CRITICAL, HIGH_RISK, WARNING)
      * @param currentValue Current value that triggered the alert
      * @param threshold Risk threshold that was breached
      * @param timestamp Alert timestamp
      */
     event RiskAlert(
-        string riskType,
+        string riskLevel,
         uint256 currentValue,
         uint256 threshold,
         uint256 timestamp
     );
 
     /**
-     * @notice Retrieves current protocol assets
-     * @dev Returns complete asset information including tokens, amounts, and values
-     * @return Complete ProtocolAssets struct with current asset state
+     * @notice Get protocol's current assets
+     * @return Full asset state including tokens, amounts and values
      */
     function getProtocolAssets() external view returns (ProtocolAssets memory);
 
     /**
-     * @notice Retrieves current protocol liabilities
-     * @dev Returns complete liability information including tokens, amounts, and values
-     * @return Complete ProtocolLiabilities struct with current liability state
+     * @notice Get protocol's current liabilities
+     * @return Full liability state including tokens, amounts and values
      */
     function getProtocolLiabilities() external view returns (ProtocolLiabilities memory);
 
     /**
-     * @notice Calculates current solvency ratio
-     * @dev Computation: (Total Assets / Total Liabilities) * 10000
-     * @return Current solvency ratio in base 10000 (e.g., 12000 = 120%)
+     * @notice Calculate current solvency ratio
+     * @return SR = (Total Assets / Total Liabilities) × 10000
      */
     function getSolvencyRatio() external view returns (uint256);
 
     /**
-     * @notice Verifies protocol solvency status
-     * @dev Checks if current solvency ratio meets minimum requirements
-     * 
-     * @return isSolvent Boolean indicating if protocol is solvent
-     * @return healthFactor Current health factor (same as solvency ratio)
-     * 
-     * Requirements:
-     * - Returns true if solvency ratio >= minimum required ratio
-     * - Health factor represents current solvency ratio
+     * @notice Check protocol solvency status
+     * @return isSolvent True if ratio >= minimum required
+     * @return healthFactor Current solvency ratio
      */
     function verifySolvency() external view returns (bool isSolvent, uint256 healthFactor);
 
     /**
-     * @notice Retrieves historical solvency metrics
-     * @dev Returns arrays of timestamps and corresponding solvency ratios
-     * 
-     * @param startTime Start of time range to query
-     * @param endTime End of time range to query
-     * @return timestamps Array of update timestamps
+     * @notice Get historical solvency metrics
+     * @param startTime Start of time range
+     * @param endTime End of time range
+     * @return timestamps Array of historical update timestamps
      * @return ratios Array of historical solvency ratios
-     * 
-     * Requirements:
-     * - startTime must be <= endTime
-     * - Arrays will have matching lengths
+     * @return assets Array of historical asset states
+     * @return liabilities Array of historical liability states
      */
     function getSolvencyHistory(uint256 startTime, uint256 endTime) 
         external 
         view 
-        returns (uint256[] memory timestamps, uint256[] memory ratios);
+        returns (
+            uint256[] memory timestamps,
+            uint256[] memory ratios,
+            ProtocolAssets[] memory assets,
+            ProtocolLiabilities[] memory liabilities
+        );
+
+    /**
+     * @notice Update protocol assets
+     * @dev Only callable by authorized oracle
+     */
+    function updateAssets(
+        address[] calldata tokens,
+        uint256[] calldata amounts,
+        uint256[] calldata values
+    ) external;
+
+    /**
+     * @notice Update protocol liabilities
+     * @dev Only callable by authorized oracle
+     */
+    function updateLiabilities(
+        address[] calldata tokens,
+        uint256[] calldata amounts,
+        uint256[] calldata values
+    ) external;
 }

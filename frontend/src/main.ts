@@ -7,6 +7,7 @@ import App from './App.vue'
 import Dashboard from './views/Dashboard.vue'
 import History from './views/History.vue'
 import Settings from './views/Settings.vue'
+import Documentation from './views/Documentation.vue'
 
 // Import styles
 import './assets/main.css'
@@ -29,6 +30,11 @@ const router = createRouter({
       path: '/settings',
       component: Settings,
       name: 'settings'
+    },
+    {
+      path: '/docs',
+      component: Documentation,
+      name: 'documentation'
     }
   ]
 })

@@ -66,5 +66,6 @@ const navigation = [
   { name: 'Dashboard', href: '/' },
   { name: 'History', href: '/history' },
   { name: 'Settings', href: '/settings' },
+  { name: 'Documentation', href: '/docs' },
 ]
 </script>

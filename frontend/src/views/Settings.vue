@@ -1,230 +1,158 @@
 <template>
-  <div class="min-h-screen bg-[#f6f8fa] p-6">
+  <div class="min-h-screen bg-[#f6f8fa] p-6 relative">
+    <!-- Loading Overlay -->
+    <div v-if="isLoading" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white p-4 rounded-lg shadow-lg">
+        <div class="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div>
+        <p class="text-sm text-gray-600">{{ updateProgress.message }}</p>
+      </div>
+    </div>
+
     <div class="max-w-5xl mx-auto space-y-6">
-      <!-- Header -->
-      <div class="flex items-center justify-between mb-8">
-        <h1 class="text-2xl font-semibold text-[#24292f]">Protocol Settings</h1>
-        <div class="flex items-center space-x-2">
-          <span v-if="isLoading" class="text-sm text-gray-600">
-            <svg class="animate-spin h-5 w-5 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-          </span>
-          <button @click="saveSettings" class="px-4 py-2 bg-[#2da44e] hover:bg-[#2c974b] text-white text-sm font-semibold rounded-md transition-colors">
-            Save Changes
-          </button>
+      <!-- Initial Price Setup Section -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-bold mb-4">Initial Price Setup</h2>
+        <div class="text-sm text-gray-600 mb-4">
+          <p>Set initial prices for protocol tokens:</p>
         </div>
-      </div>
 
-      <!-- Network Connection -->
-      <div class="mb-6 bg-white p-4 rounded-lg border border-gray-200">
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-lg font-medium">Network Connection</h3>
-            <p class="text-sm text-gray-600">
-              {{ isConnected ? `Connected as ${accountType}` : 'Not connected' }}
-            </p>
-          </div>
-          <div class="flex gap-2">
-            <button
-              v-for="type in ['deployer', 'oracle', 'user']"
-              :key="type"
-              @click="() => connectAs(type)"
-              :class="[
-                'px-4 py-2 rounded-md text-sm font-medium',
-                accountType === type
-                  ? 'bg-green-100 text-green-700 border border-green-300'
-                  : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
-              ]"
-            >
-              Connect as {{ type }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Error Alert -->
-      <div v-if="error" class="bg-[#ffebe9] border border-[#ff8182] text-[#cf222e] px-4 py-3 rounded-md mb-6">
-        {{ error }}
-      </div>
-
-      <!-- Oracle Information -->
-      <div class="bg-white border border-[#d0d7de] rounded-md shadow-sm">
-        <div class="px-6 py-4 border-b border-[#d0d7de]">
-          <h2 class="text-lg font-medium text-[#24292f]">Price Oracle</h2>
-        </div>
-        <div class="px-6 py-4">
-          <div class="flex items-center space-x-2">
-            <div class="flex-1">
-              <label class="block text-sm font-medium text-[#57606a] mb-1">Oracle Address</label>
-              <div class="flex items-center space-x-2">
-                <code class="bg-[#f6f8fa] px-2 py-1 rounded text-sm font-mono text-[#24292f]">
-                  {{ addresses.priceOracle }}
-                </code>
-                <button @click="copyToClipboard(addresses.priceOracle)" class="text-[#57606a] hover:text-[#24292f]">
-                  <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 16 16">
-                    <path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 010 14.25v-7.5z"/>
-                    <path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/>
-                  </svg>
-                </button>
-              </div>
-              <p class="mt-1 text-sm text-[#57606a]">Default price oracle used for asset valuation</p>
-            </div>
-            <div class="flex items-center px-3 py-1 bg-[#ddf4ff] text-[#0969da] rounded-full text-sm">
-              Active
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Risk Thresholds -->
-      <div class="bg-white border border-[#d0d7de] rounded-md shadow-sm">
-        <div class="px-6 py-4 border-b border-[#d0d7de]">
-          <h2 class="text-lg font-medium text-[#24292f]">Risk Thresholds</h2>
-        </div>
-        <div class="px-6 py-4 space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div v-for="(threshold, key) in thresholds" :key="key" class="space-y-2">
-              <label class="block text-sm font-medium text-[#57606a]">{{ threshold.label }}</label>
-              <div class="relative">
-                <input
-                  v-model="settings[key]"
-                  type="number"
-                  :placeholder="threshold.placeholder"
-                  class="block w-full px-3 py-2 border border-[#d0d7de] rounded-md shadow-sm focus:ring-2 focus:ring-[#0969da] focus:border-transparent"
-                />
-                <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-[#57606a]">%</span>
-              </div>
-              <p class="text-xs text-[#57606a]">{{ threshold.description }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Asset Configuration -->
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <h2 class="text-xl font-bold mb-4">Asset Configuration</h2>
-        <div class="space-y-4">
-          <div v-for="(asset, index) in settings.assets" :key="index" class="grid grid-cols-4 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Token</label>
-              <select v-model="asset.token" class="w-full rounded border p-2">
-                <option value="WETH">WETH</option>
-                <option value="WBTC">WBTC</option>
-                <option value="USDC">USDC</option>
-                <option value="USDT">USDT</option>
-                <option value="DAI">DAI</option>
-                <option value="USDC-ETH-LP">USDC-ETH LP</option>
-                <option value="DAI-USDC-LP">DAI-USDC LP</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Initial Amount</label>
-              <input v-model="asset.amount" type="number" class="w-full rounded border p-2" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Initial Price ($)</label>
-              <input v-model="asset.price" type="number" class="w-full rounded border p-2" />
-            </div>
-            <div class="flex items-end">
-              <button @click="removeAsset(index)" class="bg-red-500 text-white px-4 py-2 rounded">
-                Remove
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-for="(config, symbol) in TOKEN_LIST" :key="symbol" class="border rounded-lg p-4">
+            <h3 class="font-semibold mb-2">{{ symbol }}</h3>
+            <div class="flex gap-2 items-center">
+              <input 
+                type="number" 
+                v-model="tokenPriceInputs[symbol]" 
+                class="w-full px-3 py-2 border rounded" 
+                :placeholder="String(Number(config.initialPrice) / 1e8)"
+              />
+              <button 
+                @click="updateTokenPrice(symbol, Number(tokenPriceInputs[symbol]))"
+                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              >
+                Update
               </button>
             </div>
           </div>
-          <button @click="addAsset" class="bg-green-500 text-white px-4 py-2 rounded">
-            Add Asset
+        </div>
+
+        <div class="mt-4 flex gap-4">
+          <button @click="setupInitialPrices" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+            Set All Initial Prices
+          </button>
+          <button @click="randomizeAllPrices" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+            Randomize Prices
           </button>
         </div>
       </div>
 
-      <!-- Price Oracle Configuration -->
-      <div class="bg-white border border-[#d0d7de] rounded-md shadow-sm">
-        <div class="px-6 py-4 border-b border-[#d0d7de]">
-          <h2 class="text-lg font-medium text-[#24292f]">Price Oracle Configuration</h2>
-        </div>
-        <div class="px-6 py-4">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-[#57606a]">Oracle Address</label>
-              <div class="mt-1 flex items-center space-x-2">
-                <code class="flex-1 bg-[#f6f8fa] px-2 py-1 rounded text-sm font-mono text-[#24292f]">
-                  {{ addresses.priceOracle }}
-                </code>
-              </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-[#57606a]">Update Interval (s)</label>
-              <input 
-                v-model="settings.oracles[0].interval" 
-                type="number" 
-                class="mt-1 block w-full px-3 py-2 border border-[#d0d7de] rounded-md"
-              />
-            </div>
-          </div>
-          <p class="mt-2 text-sm text-[#57606a]">
-            Using deployed MockPriceOracle from hardhat network
-          </p>
-        </div>
-      </div>
-
-      <!-- Market Simulation -->
+      <!-- Test Scenarios Section -->
       <div class="bg-white rounded-lg shadow-md p-6">
-        <h2 class="text-xl font-bold mb-4">Market Simulation</h2>
+        <h2 class="text-xl font-bold mb-4">Protocol Test Scenarios</h2>
+        <div class="text-sm text-gray-600 mb-4">
+          <p>Configure and run market simulation scenarios:</p>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 class="text-lg font-semibold mb-3">Market Crash Scenario</h3>
+          <!-- Market Crash -->
+          <div class="border rounded-lg p-4">
+            <h3 class="font-semibold mb-2">Market Crash Test</h3>
+            <p class="text-sm text-gray-600 mb-4">
+              Simulates severe market downturn affecting all assets:
+              <br>- ETH: -{{ settings.simulation.ethDrop }}%
+              <br>- BTC: -{{ settings.simulation.btcDrop }}%
+            </p>
             <div class="space-y-3">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">ETH Price Drop (%)</label>
+                <label class="block text-sm font-medium mb-1">ETH Drop (%)</label>
                 <input v-model="settings.simulation.ethDrop" type="number" class="w-full rounded border p-2" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">BTC Price Drop (%)</label>
+                <label class="block text-sm font-medium mb-1">BTC Drop (%)</label>
                 <input v-model="settings.simulation.btcDrop" type="number" class="w-full rounded border p-2" />
               </div>
-              <button @click="simulateMarketCrash" class="bg-red-500 text-white px-4 py-2 rounded">
-                Simulate Crash
+              <button @click="simulateMarketCrash" class="w-full bg-red-500 text-white px-4 py-2 rounded">
+                Run Crash Test
               </button>
             </div>
           </div>
-          
-          <div>
-            <h3 class="text-lg font-semibold mb-3">Volatility Testing</h3>
+
+          <!-- Volatility -->
+          <div class="border rounded-lg p-4">
+            <h3 class="font-semibold mb-2">Volatility Test</h3>
+            <p class="text-sm text-gray-600 mb-4">
+              Tests price fluctuations:
+              <br>- ±{{ settings.simulation.volatility }}% price swings
+              <br>- 5 price points over {{ settings.simulation.duration }}h
+            </p>
             <div class="space-y-3">
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Volatility Range (%)</label>
+                <label class="block text-sm font-medium mb-1">Volatility Range (%)</label>
                 <input v-model="settings.simulation.volatility" type="number" class="w-full rounded border p-2" />
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Test Duration (hours)</label>
+                <label class="block text-sm font-medium mb-1">Duration (hours)</label>
                 <input v-model="settings.simulation.duration" type="number" class="w-full rounded border p-2" />
               </div>
-              <button @click="simulateVolatility" class="bg-yellow-500 text-white px-4 py-2 rounded">
-                Test Volatility
+              <button @click="simulateVolatility" class="w-full bg-yellow-500 text-white px-4 py-2 rounded">
+                Run Volatility Test
               </button>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Save Settings -->
-      <div class="flex justify-end">
-        <button @click="saveSettings" class="bg-blue-500 text-white px-6 py-3 rounded font-semibold">
-          Save All Settings
-        </button>
+        <!-- Test Results -->
+        <div v-if="testResults" class="mt-6 p-4 bg-gray-50 rounded-lg">
+          <h3 class="font-semibold mb-2">Test Results: {{ testResults.testName }}</h3>
+          <div class="space-y-4">
+            <!-- Estado actual -->
+            <div class="text-sm space-y-2">
+              <p>Current Health Factor: {{ formatRatio(Number(testResults.healthFactor)) }}%</p>
+              <p>Solvency Status: {{ testResults.isSolvent ? 'Solvent' : 'Critical' }}</p>
+            </div>
+
+            <!-- Historial de cambios -->
+            <div v-if="testResults.priceChanges" class="mt-4">
+              <h4 class="font-medium mb-2">Price Changes History:</h4>
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                  <thead>
+                    <tr class="bg-gray-100">
+                      <th class="p-2 text-left">Step</th>
+                      <th class="p-2 text-left">Token</th>
+                      <th class="p-2 text-right">Old Price</th>
+                      <th class="p-2 text-right">New Price</th>
+                      <th class="p-2 text-right">Change</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="change in testResults.priceChanges" :key="change.step" class="border-t">
+                      <td class="p-2">{{ change.step }}</td>
+                      <td class="p-2">{{ change.token }}</td>
+                      <td class="p-2 text-right">${{ formatNumber(change.oldPrice) }}</td>
+                      <td class="p-2 text-right">${{ formatNumber(change.newPrice) }}</td>
+                      <td class="p-2 text-right" :class="getPriceChangeColor(change.percentChange)">
+                        {{ formatPercentChange(change.percentChange) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, defineComponent } from 'vue'
 import { SolvencyProofService } from '../services/contractIntegration'
 import { ethers } from 'ethers'
 import addresses from '../config/addresses.json'
 import { useWeb3 } from '../composables/useWeb3'
+import QuickPriceUpdate from '../components/QuickPriceUpdate.vue'
 
 // Define thresholds configuration
 const thresholds = {
@@ -254,42 +182,23 @@ const copyToClipboard = async (text: string) => {
   }
 }
 
-// Corregir la definición de TOKEN_LIST para usar las direcciones directamente de CONFIG
-const TOKEN_LIST: Record<string, { address: string, decimals: number, initialPrice: bigint }> = {
+// Simplificar TOKEN_LIST para solo ETH y BTC
+interface TokenConfig {
+  address: `0x${string}`; // Note the type change here
+  decimals: number;
+  initialPrice: bigint;
+}
+
+const TOKEN_LIST: Record<string, TokenConfig> = {
   WETH: {
-    address: addresses.tokens.weth,
+    address: addresses.tokens.weth as `0x${string}`,
     decimals: 18,
     initialPrice: 2000n * (10n ** 8n)
   },
   WBTC: {
-    address: addresses.tokens.wbtc,
+    address: addresses.tokens.wbtc as `0x${string}`,
     decimals: 18,
     initialPrice: 35000n * (10n ** 8n)
-  },
-  USDC: {
-    address: addresses.tokens.usdc,
-    decimals: 6,
-    initialPrice: 1n * (10n ** 8n)
-  },
-  USDT: {
-    address: addresses.tokens.usdt,
-    decimals: 6,
-    initialPrice: 1n * (10n ** 8n)
-  },
-  DAI: {
-    address: addresses.tokens.dai,
-    decimals: 18,
-    initialPrice: 1n * (10n ** 8n)
-  },
-  "USDC-ETH-LP": {
-    address: addresses.tokens.usdcEthLp,
-    decimals: 18,
-    initialPrice: 1000n * (10n ** 8n)
-  },
-  "DAI-USDC-LP": {
-    address: addresses.tokens.daiUsdcLp,
-    decimals: 18,
-    initialPrice: 2n * (10n ** 8n)
   }
 }
 
@@ -318,11 +227,11 @@ const isLoading = ref(false)
 const error = ref<string | null>(null)
 
 // Add Web3 composable
-const { 
-  isConnected, 
-  account, 
-  connect: connectWeb3, 
-  disconnect 
+const {
+  isConnected,
+  account,
+  connect: connectWeb3,
+  disconnect
 } = useWeb3()
 
 const accountType = ref<'deployer' | 'oracle' | 'user'>('deployer')
@@ -332,37 +241,44 @@ const connectAs = async (type: 'deployer' | 'oracle' | 'user') => {
   try {
     await connectWeb3(type)
     accountType.value = type
-    
-    // Reinitialize services with new account
-    if (solvencyService.value) {
-      await setupInitialState()
+
+    // Only initialize service if needed, don't setup initial state
+    if (!solvencyService.value) {
+      const { publicClient, walletClient } = useWeb3()
+      if (publicClient.value && walletClient.value) {
+        solvencyService.value = new SolvencyProofService()
+        await solvencyService.value.initialize(
+          publicClient.value,
+          walletClient.value
+        )
+      }
     }
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to connect'
   }
 }
 
+// Modify onMounted to only setup service
 onMounted(async () => {
   try {
     const { connect, publicClient, walletClient } = useWeb3()
-    // Conectar como oracle en lugar de deployer
     await connect('oracle')
-    
+    accountType.value = 'oracle'
+
     if (!publicClient.value || !walletClient.value) {
       throw new Error('Failed to initialize Web3')
     }
-    
+
     solvencyService.value = new SolvencyProofService()
     const initialized = await solvencyService.value.initialize(
       publicClient.value,
       walletClient.value
     )
-    
+
     if (!initialized) {
       throw new Error('Failed to initialize service')
     }
-    
-    await setupInitialState()
+
   } catch (e) {
     console.error('Mount error:', e)
     error.value = e instanceof Error ? e.message : 'Failed to initialize'
@@ -374,24 +290,24 @@ const setupInitialState = async () => {
     console.error('Service not available')
     return
   }
-  
+
   try {
     const tokens = settings.value.assets.map(a => TOKEN_LIST[a.token].address)
-    
-    const amounts = settings.value.assets.map(a => 
+
+    const amounts = settings.value.assets.map(a =>
       ethers.parseUnits(
-        a.amount.toString(), 
+        a.amount.toString(),
         TOKEN_LIST[a.token].decimals
       )
     )
 
     const values = settings.value.assets.map(a => {
       const amount = ethers.parseUnits(
-        a.amount.toString(), 
+        a.amount.toString(),
         TOKEN_LIST[a.token].decimals
       )
       const price = ethers.parseUnits(
-        a.price.toString(), 
+        a.price.toString(),
         8 // Oracle price decimals
       )
       return (amount * price) / (10n ** BigInt(TOKEN_LIST[a.token].decimals))
@@ -410,20 +326,13 @@ const setupInitialState = async () => {
   }
 }
 
-const addAsset = () => {
-  settings.value.assets.push({ token: 'WETH', amount: 0, price: 0 })
-}
-
-const removeAsset = (index: number) => {
-  settings.value.assets.splice(index, 1)
-}
-
 const simulateMarketCrash = async () => {
   if (!solvencyService.value) return
-  
   isLoading.value = true
+  updateProgress.value.message = 'Simulating market crash...'
+  
   try {
-    const tokens = [
+    const tokens: `0x${string}`[] = [
       TOKEN_LIST.WETH.address,
       TOKEN_LIST.WBTC.address
     ]
@@ -432,53 +341,88 @@ const simulateMarketCrash = async () => {
       ethers.parseEther("1000"),
       ethers.parseEther("100")
     ]
+
+    const oldEthPrice = await solvencyService.value.getPrice('eth', Math.floor(Date.now() / 1000))
+    const oldBtcPrice = await solvencyService.value.getPrice('btc', Math.floor(Date.now() / 1000))
     
-    // Calcular nuevos precios después del crash
-    const wethPrice = TOKEN_LIST.WETH.initialPrice * BigInt(100 - settings.value.simulation.ethDrop) / 100n
-    const wbtcPrice = TOKEN_LIST.WBTC.initialPrice * BigInt(100 - settings.value.simulation.btcDrop) / 100n
-    const values = [wethPrice, wbtcPrice]
+    const newEthPrice = TOKEN_LIST.WETH.initialPrice * BigInt(100 - settings.value.simulation.ethDrop) / 100n
+    const newBtcPrice = TOKEN_LIST.WBTC.initialPrice * BigInt(100 - settings.value.simulation.btcDrop) / 100n
     
-    await solvencyService.value.simulateMarketCrash(tokens, amounts, values)
-    const metrics = await solvencyService.value.getSolvencyMetrics()
-    console.log('Market crash simulation results:', metrics)
+    const metrics = await solvencyService.value.simulateMarketCrash(
+      tokens,
+      amounts,
+      [newEthPrice, newBtcPrice]
+    )
+
+    testResults.value = {
+      testName: 'Market Crash Test',
+      healthFactor: Number(metrics.healthFactor),
+      isSolvent: metrics.isSolvent,
+      priceChanges: [
+        {
+          step: 1,
+          token: 'ETH',
+          oldPrice: Number(oldEthPrice) / 1e8,
+          newPrice: Number(newEthPrice) / 1e8,
+          percentChange: -settings.value.simulation.ethDrop
+        },
+        {
+          step: 1,
+          token: 'BTC',
+          oldPrice: Number(oldBtcPrice) / 1e8,
+          newPrice: Number(newBtcPrice) / 1e8,
+          percentChange: -settings.value.simulation.btcDrop
+        }
+      ]
+    }
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to simulate crash'
   } finally {
     isLoading.value = false
+    updateProgress.value.message = ''
   }
 }
 
-const simulateVolatility = async () => {
+async function simulateVolatility() {
   if (!solvencyService.value) return
-  
   isLoading.value = true
+  updateProgress.value.message = 'Simulating volatility...'
+  
   try {
+    // Get initial state
+    const token = TOKEN_LIST.WETH.address as `0x${string}`
+    const baseAmount = ethers.parseEther("1000") // 1000 ETH
+    const volatility = settings.value.simulation.volatility
     const steps = 5
-    const basePrice = TOKEN_LIST.WETH.initialPrice
-    
-    for (let i = 0; i < steps; i++) {
-      const volatility = Math.sin(i) * (settings.value.simulation.volatility / 100)
-      const newPrice = basePrice * BigInt(Math.floor((1 + volatility) * 100)) / 100n
-      
-      await solvencyService.value.simulateVolatility(
-        TOKEN_LIST.WETH.address,
-        ethers.parseEther("1000"),
-        newPrice
-      )
-      
-      if (i < steps - 1) {
-        await new Promise(r => setTimeout(r, 
-          (settings.value.simulation.duration * 3600 * 1000) / steps
-        ))
-      }
+
+    // Run simulation
+    const results = await solvencyService.value.simulateVolatility(
+      token,
+      baseAmount,
+      volatility,
+      steps
+    )
+
+    // Update test results
+    testResults.value = {
+      testName: 'Volatility Test',
+      healthFactor: results[results.length - 1].healthFactor * 100,
+      isSolvent: true,
+      priceChanges: results.map(r => ({
+        step: r.step,
+        token: 'ETH',
+        oldPrice: r.oldPrice,
+        newPrice: r.newPrice,
+        percentChange: r.percentChange
+      }))
     }
-    
-    const metrics = await solvencyService.value.getSolvencyMetrics()
-    console.log('Volatility simulation results:', metrics)
+
+    console.log('Volatility test results:', testResults.value)
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Failed to simulate volatility'
   } finally {
     isLoading.value = false
+    updateProgress.value.message = ''
   }
 }
 
@@ -487,38 +431,47 @@ const saveSettings = async () => {
     error.value = 'Not connected or service not initialized'
     return
   }
-  
+
+  // Ensure we're connected as oracle
+  if (accountType.value !== 'oracle') {
+    error.value = 'Must be connected as oracle to update prices'
+    return
+  }
+
   isLoading.value = true
   try {
+    console.log('Current settings:', JSON.stringify(settings.value, null, 2))
+
+    // Update prices first
+    for (const asset of settings.value.assets) {
+      const tokenAddress = TOKEN_LIST[asset.token].address
+      const price = BigInt(Math.floor(Number(asset.price) * 1e8))
+      await solvencyService.value.updateOraclePrice(tokenAddress, price)
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+
+    // Calculate assets and liabilities
     const tokens = settings.value.assets.map(a => TOKEN_LIST[a.token].address)
-    
-    const amounts = settings.value.assets.map(a => 
-      ethers.parseUnits(
-        a.amount.toString(), 
-        TOKEN_LIST[a.token].decimals
-      )
+    const amounts = settings.value.assets.map(a =>
+      ethers.parseUnits(a.amount.toString(), TOKEN_LIST[a.token].decimals)
     )
 
-    const values = settings.value.assets.map(a => {
-      const amount = ethers.parseUnits(
-        a.amount.toString(), 
-        TOKEN_LIST[a.token].decimals
-      )
-      const price = ethers.parseUnits(
-        a.price.toString(), 
-        8 // Oracle price decimals
-      )
+    // Calculate values using current prices
+    const values = await Promise.all(settings.value.assets.map(async (a) => {
+      const amount = ethers.parseUnits(a.amount.toString(), TOKEN_LIST[a.token].decimals)
+      const price = ethers.parseUnits(a.price.toString(), 8)
       return (amount * price) / (10n ** BigInt(TOKEN_LIST[a.token].decimals))
-    })
+    }))
 
-    console.log('Saving settings with:', {
-      tokens,
-      amounts: amounts.map(a => a.toString()),
-      values: values.map(v => v.toString())
-    })
-    
-    const hash = await solvencyService.value.updateAssets(tokens, amounts, values)
-    console.log('Transaction hash:', hash)
+    // Set liabilities as 50% of assets for testing
+    const liabilityAmounts = amounts.map(amount => amount / 2n)
+    const liabilityValues = values.map(value => value / 2n)
+
+    await solvencyService.value.updateProtocolState(
+      { tokens, amounts, values },
+      { tokens, amounts: liabilityAmounts, values: liabilityValues }
+    )
+
     console.log('Settings saved successfully')
   } catch (e) {
     console.error('Save settings error:', e)
@@ -526,6 +479,255 @@ const saveSettings = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+// Add quick price update function
+const updateTokenPrice = async (token: string, price: number) => {
+  if (!solvencyService.value) return
+  
+  isLoading.value = true
+  updateProgress.value.message = 'Updating price...'
+  
+  try {
+    const tokenAddress = TOKEN_LIST[token].address
+    const priceValue = BigInt(Math.floor(price * 1e8))
+    
+    await solvencyService.value.updateOraclePrice(tokenAddress, priceValue)
+    
+    const assetIndex = settings.value.assets.findIndex(a => a.token === token)
+    if (assetIndex >= 0) {
+      settings.value.assets[assetIndex].price = price.toString()
+    }
+
+    await fetchLatestHistory()
+    
+    console.log(`Updated ${token} price to ${price}`)
+  } catch (e) {
+    error.value = `Failed to update ${token} price: ${e instanceof Error ? e.message : String(e)}`
+    console.error('Price update error:', e)
+  } finally {
+    isLoading.value = false
+    updateProgress.value.message = ''
+  }
+}
+
+// Update fetchLatestHistory to include price updates
+const fetchLatestHistory = async () => {
+  const now = Math.floor(Date.now() / 1000)
+  const oneHourAgo = now - 3600
+  
+  try {
+    const { timestamps, ratios, history } = await solvencyService.value?.getSolvencyHistory(
+      oneHourAgo,
+      now
+    ) || {}
+
+    if (history && history.length > 0) {
+      const latest = history[history.length - 1]
+      const ethAsset = latest.assets.find((a: { token: string }) => a.token === 'ETH')
+      const btcAsset = latest.assets.find((a: { token: string }) => a.token === 'BTC')
+      
+      testResults.value = {
+        testName: 'Price Update',
+        healthFactor: latest.ratio,
+        isSolvent: latest.ratio >= 10500,
+        priceChanges: [
+          ethAsset && {
+            step: 1,
+            token: 'ETH',
+            oldPrice: Number(ethAsset.value) / Number(ethAsset.amount),
+            newPrice: Number(ethAsset.value) / Number(ethAsset.amount),
+            percentChange: 0
+          },
+          btcAsset && {
+            step: 1,
+            token: 'BTC',
+            oldPrice: Number(btcAsset.value) / Number(btcAsset.amount),
+            newPrice: Number(btcAsset.value) / Number(btcAsset.amount),
+            percentChange: 0
+          }
+        ].filter(Boolean)
+      }
+    }
+  } catch (e) {
+    console.error('History fetch error:', e)
+  }
+}
+
+// 1. Definir secciones claras para las configuraciones
+const sections = {
+  assets: {
+    title: 'Asset Configuration',
+    description: 'Configure protocol assets and their initial values'
+  },
+  prices: {
+    title: 'Price Management',
+    description: 'Update asset prices individually or in batch'
+  },
+  simulation: {
+    title: 'Market Simulation',
+    description: 'Test different market scenarios'
+  },
+  tests: {
+    title: 'Protocol Tests',
+    description: 'Run predefined test scenarios'
+  }
+}
+
+// 3. Estado reactivo para la UI
+interface TestResult {
+  testName: string;
+  healthFactor: number;
+  isSolvent: boolean;
+  priceChanges?: {
+    step: number;
+    token: string;
+    oldPrice: number;
+    newPrice: number;
+    percentChange: number;
+  }[];
+}
+const testResults = ref<TestResult | null>(null)
+
+
+// Add a new ref for managing token prices directly
+const tokenPriceInputs = ref<Record<string, string>>(
+  Object.keys(TOKEN_LIST).reduce((acc, token) => {
+    // Initialize with current prices from settings or default values
+    const asset = settings.value.assets.find(a => a.token === token)
+    acc[token] = asset?.price || String(Number(TOKEN_LIST[token].initialPrice) / 1e8)
+    return acc
+  }, {} as Record<string, string>)
+)
+
+// Añadir nuevas funciones después de las funciones existentes
+const generateRandomPrice = (basePrice: bigint) => {
+  // Generar variación aleatoria entre -20% y +20%
+  const variation = (Math.random() * 0.4) - 0.2
+  const newPrice = Number(basePrice) * (1 + variation)
+  return Math.floor(newPrice)
+}
+
+const randomizeAllPrices = async () => {
+  if (!solvencyService.value) return
+  isLoading.value = true
+  
+  try {
+    // Generar nuevos precios aleatorios para cada token
+    for (const [symbol, config] of Object.entries(TOKEN_LIST)) {
+      const newPrice = generateRandomPrice(config.initialPrice)
+      tokenPriceInputs.value[symbol] = (newPrice / 1e8).toString()
+    }
+    
+    // Actualizar todos los precios
+    await updateAllPrices()
+  } catch (e) {
+    error.value = `Failed to randomize prices: ${e instanceof Error ? e.message : String(e)}`
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const updateAllPrices = async () => {
+  if (!solvencyService.value) return
+  isLoading.value = true
+  
+  try {
+    // Actualizar cada token secuencialmente
+    for (const [symbol, price] of Object.entries(tokenPriceInputs.value)) {
+      await updateTokenPrice(symbol, Number(price))
+      // Pequeña pausa entre actualizaciones
+      await new Promise(r => setTimeout(r, 500))
+    }
+    
+    // Actualizar histórico después de todos los cambios
+    await fetchLatestHistory()
+  } catch (e) {
+    error.value = `Failed to update all prices: ${e instanceof Error ? e.message : String(e)}`
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Agregar nuevo estado para el progreso
+const updateProgress = ref({
+  total: 0,
+  current: 0,
+  message: ''
+})
+
+const formatPercentage = (percent: number): string => {
+  const sign = percent >= 0 ? '+' : ''
+  return `${sign}${percent.toFixed(2)}%`
+}
+
+// Add new function to set initial prices
+const setupInitialPrices = async () => {
+  if (!solvencyService.value) return
+  isLoading.value = true
+  updateProgress.value.message = 'Setting initial prices...'
+  
+  try {
+    // Set initial prices for ETH and BTC only
+    await solvencyService.value.updateOraclePrice(
+      TOKEN_LIST.WETH.address as `0x${string}`,
+      TOKEN_LIST.WETH.initialPrice
+    )
+    await new Promise(r => setTimeout(r, 1000))
+    
+    await solvencyService.value.updateOraclePrice(
+      TOKEN_LIST.WBTC.address as `0x${string}`,
+      TOKEN_LIST.WBTC.initialPrice
+    )
+
+    // Initialize protocol state with just ETH and BTC
+    const tokens = [TOKEN_LIST.WETH.address, TOKEN_LIST.WBTC.address]
+    const amounts = [
+      ethers.parseEther("1000"), // 1000 ETH
+      ethers.parseEther("100")   // 100 BTC
+    ]
+    const values = [
+      TOKEN_LIST.WETH.initialPrice * BigInt(1000),
+      TOKEN_LIST.WBTC.initialPrice * BigInt(100)
+    ]
+
+    await solvencyService.value.updateProtocolState(
+      { tokens: tokens as `0x${string}`[], amounts, values },
+      {
+        tokens: tokens as `0x${string}`[],
+        amounts: amounts.map(a => a / 2n),
+        values: values.map(v => v / 2n)
+      }
+    )
+    
+    console.log('Initial prices set successfully')
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Failed to set initial prices'
+    console.error('Setup error:', e)
+  } finally {
+    isLoading.value = false
+    updateProgress.value.message = ''
+  }
+}
+
+// Add these formatting functions in the <script setup> section:
+const formatNumber = (num: number): string => {
+  return num.toFixed(2)
+}
+
+const formatPercentChange = (change: number): string => {
+  const sign = change >= 0 ? '+' : ''
+  return `${sign}${change.toFixed(2)}%`
+}
+
+const formatRatio = (ratio: number): string => {
+  return (ratio / 100).toFixed(2)
+}
+
+const getPriceChangeColor = (change: number): string => {
+  if (change > 0) return 'text-green-600'
+  if (change < 0) return 'text-red-600'
+  return 'text-gray-600'
 }
 </script>
 
@@ -536,7 +738,24 @@ input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+.status-badge {
+  @apply px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.status-healthy {
+  @apply bg-green-100 text-green-800;
+}
+
+.status-warning {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.status-critical {
+  @apply bg-red-100 text-red-800;
 }
 </style>

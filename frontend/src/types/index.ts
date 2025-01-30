@@ -49,3 +49,29 @@ export interface ContractAddresses {
   SolvencyProof: string;
   OracleAddress: string;
 }
+
+export interface PriceHistoryEntry {
+  timestamp: number;
+  ethPrice: number;
+  btcPrice: number;
+  healthFactor: number;
+  status: string;
+}
+
+export interface AbiComponent {
+  anonymous?: boolean;
+  inputs?: Array<{
+    indexed?: boolean;
+    internalType?: string;
+    name: string;
+    type: string;
+  }>;
+  name?: string;
+  outputs?: Array<{
+    internalType?: string;
+    name: string;
+    type: string;
+  }>;
+  stateMutability?: string;
+  type: string;
+}

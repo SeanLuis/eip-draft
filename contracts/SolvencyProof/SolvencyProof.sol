@@ -4,134 +4,43 @@ pragma solidity ^0.8.20;
 import "./ISolvencyProof.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
 
 /**
  * @title SolvencyProof
- * @notice Implementation of the DeFi Protocol Solvency Proof Standard
- * @dev Implements ISolvencyProof interface with comprehensive solvency tracking
- * 
- * This contract provides:
- * - Real-time solvency monitoring
- * - Multi-oracle price feed integration
- * - Risk alert system
- * - Historical metrics tracking
- * 
- * Security features:
- * - Reentrancy protection
- * - Access control for oracles
- * - Rate limiting
- * - Threshold-based risk alerts
+ * @notice Implementation of DeFi Protocol Solvency Proof Standard
  */
 contract SolvencyProof is ISolvencyProof, Ownable, ReentrancyGuard {
-    using Math for uint256;
-
     // === Constants ===
-    /**
-     * @dev Base for ratio calculations (100% = 10000)
-     */
-    uint256 private constant RATIO_DECIMALS = 10000;
-
-    /**
-     * @dev Minimum required solvency ratio (105% = 10500)
-     */
-    uint256 private constant MIN_SOLVENCY_RATIO = 10500;
-
-    /**
-     * @dev Critical solvency threshold (102% = 10200)
-     */
-    uint256 private constant CRITICAL_SOLVENCY_RATIO = 10200;
+    uint256 private constant RATIO_DECIMALS = 10000;      // Base for calculations
+    uint256 private constant MIN_SOLVENCY_RATIO = 10500;  // 105%
+    uint256 private constant CRITICAL_RATIO = 10200;      // 102%
 
     // === State Variables ===
-    /**
-     * @dev Current protocol assets state
-     */
     ProtocolAssets private currentAssets;
-
-    /**
-     * @dev Current protocol liabilities state
-     */
     ProtocolLiabilities private currentLiabilities;
-
-    /**
-     * @dev Historical metrics for solvency tracking
-     */
-    HistoricalMetric[] private metricsHistory;
-
-    /**
-     * @dev Mapping of authorized oracle addresses
-     */
     mapping(address => bool) public assetOracles;
 
-    /**
-     * @dev Struct for storing historical metrics
-     */
     struct HistoricalMetric {
         uint256 timestamp;
         uint256 solvencyRatio;
+        ProtocolAssets assets;
+        ProtocolLiabilities liabilities;
     }
+    HistoricalMetric[] private metricsHistory;
 
     // === Events ===
-    /**
-     * @dev Emitted when oracle authorization is updated
-     */
     event OracleUpdated(address indexed oracle, bool authorized);
 
-    /**
-     * @notice Contract constructor
-     * @dev Initializes the contract with the deployer as owner
-     */
+    // === Constructor & Modifiers ===
     constructor() Ownable(msg.sender) {}
 
-    // === Modifiers ===
-    /**
-     * @dev Restricts function access to authorized oracles
-     */
     modifier onlyOracle() {
         require(assetOracles[msg.sender], "Not authorized oracle");
         _;
     }
 
     // === External Functions ===
-    
-    /**
-     * @notice Updates protocol assets
-     * @dev Records new asset values and triggers metrics update
-     * 
-     * @param tokens Array of token addresses
-     * @param amounts Array of token amounts
-     * @param values Array of token values in ETH
-     * 
-     * Requirements:
-     * - Caller must be authorized oracle
-     * - All arrays must have matching lengths
-     * - Values must be in ETH with 18 decimals
-     * 
-     * Emits:
-     * - {SolvencyMetricsUpdated} event
-     * - {RiskAlert} event if thresholds are breached
-     */
-    function updateAssets(
-        address[] calldata tokens,
-        uint256[] calldata amounts,
-        uint256[] calldata values
-    ) external onlyOracle nonReentrant {
-        require(tokens.length == amounts.length && 
-                amounts.length == values.length, 
-                "Array lengths mismatch");
-
-        currentAssets = ProtocolAssets({
-            tokens: tokens,
-            amounts: amounts,
-            values: values,
-            timestamp: block.timestamp
-        });
-
-        _updateMetrics();
-    }
-
-    // Implementación de la interfaz
+    // === Interface Implementation ===
     function getProtocolAssets() external view returns (ProtocolAssets memory) {
         return currentAssets;
     }
@@ -146,21 +55,18 @@ contract SolvencyProof is ISolvencyProof, Ownable, ReentrancyGuard {
 
     function verifySolvency() external view returns (bool isSolvent, uint256 healthFactor) {
         uint256 ratio = _calculateSolvencyRatio();
-        isSolvent = ratio >= MIN_SOLVENCY_RATIO;
-        healthFactor = ratio;
-
-        if (ratio < CRITICAL_SOLVENCY_RATIO) {
-            // Aquí se podría agregar lógica adicional para manejar situaciones críticas
-            return (false, ratio);
-        }
-
-        return (isSolvent, healthFactor);
+        return (ratio >= MIN_SOLVENCY_RATIO, ratio);
     }
 
-    function getSolvencyHistory(uint256 startTime, uint256 endTime)
-        external
-        view
-        returns (uint256[] memory timestamps, uint256[] memory ratios)
+    function getSolvencyHistory(uint256 startTime, uint256 endTime) 
+        external 
+        view 
+        returns (
+            uint256[] memory timestamps,
+            uint256[] memory ratios,
+            ProtocolAssets[] memory assets,
+            ProtocolLiabilities[] memory liabilities
+        )
     {
         uint256 count = 0;
         for (uint256 i = 0; i < metricsHistory.length; i++) {
@@ -172,6 +78,8 @@ contract SolvencyProof is ISolvencyProof, Ownable, ReentrancyGuard {
 
         timestamps = new uint256[](count);
         ratios = new uint256[](count);
+        assets = new ProtocolAssets[](count);
+        liabilities = new ProtocolLiabilities[](count);
         uint256 index = 0;
 
         for (uint256 i = 0; i < metricsHistory.length && index < count; i++) {
@@ -179,14 +87,33 @@ contract SolvencyProof is ISolvencyProof, Ownable, ReentrancyGuard {
                 metricsHistory[i].timestamp <= endTime) {
                 timestamps[index] = metricsHistory[i].timestamp;
                 ratios[index] = metricsHistory[i].solvencyRatio;
+                assets[index] = metricsHistory[i].assets;
+                liabilities[index] = metricsHistory[i].liabilities;
                 index++;
             }
         }
 
-        return (timestamps, ratios);
+        return (timestamps, ratios, assets, liabilities);
     }
 
-    // Funciones para actualizar estado
+    function updateAssets(
+        address[] calldata tokens,
+        uint256[] calldata amounts,
+        uint256[] calldata values
+    ) external onlyOracle nonReentrant {
+        require(tokens.length == amounts.length && amounts.length == values.length, 
+                "Array lengths mismatch");
+
+        currentAssets = ProtocolAssets({
+            tokens: tokens,
+            amounts: amounts,
+            values: values,
+            timestamp: block.timestamp
+        });
+
+        _updateMetrics();
+    }
+
     function updateLiabilities(
         address[] calldata tokens,
         uint256[] calldata amounts,
@@ -195,79 +122,61 @@ contract SolvencyProof is ISolvencyProof, Ownable, ReentrancyGuard {
         require(tokens.length == amounts.length && amounts.length == values.length, 
                 "Array lengths mismatch");
 
-        currentLiabilities.tokens = tokens;
-        currentLiabilities.amounts = amounts;
-        currentLiabilities.values = values;
-        currentLiabilities.timestamp = block.timestamp;
+        currentLiabilities = ProtocolLiabilities({
+            tokens: tokens,
+            amounts: amounts,
+            values: values,
+            timestamp: block.timestamp
+        });
 
         _updateMetrics();
     }
 
     // === Admin Functions ===
-    /**
-     * @notice Sets or revokes oracle authorization
-     * @dev Allows owner to manage oracle access
-     * 
-     * @param oracle Address of the oracle to modify
-     * @param authorized True to authorize, false to revoke
-     * 
-     * Requirements:
-     * - Caller must be contract owner
-     * 
-     * Emits:
-     * - {OracleUpdated} event when authorization changes
-     */
     function setOracle(address oracle, bool authorized) external onlyOwner {
         require(oracle != address(0), "Invalid oracle address");
         assetOracles[oracle] = authorized;
         emit OracleUpdated(oracle, authorized);
     }
 
-    // Funciones internas
-    /**
-     * @dev Internal function to calculate solvency ratio
-     * @return Calculated solvency ratio in RATIO_DECIMALS base
-     */
+    // === Internal Functions ===
     function _calculateSolvencyRatio() internal view returns (uint256) {
         uint256 totalAssets = _sumArray(currentAssets.values);
         uint256 totalLiabilities = _sumArray(currentLiabilities.values);
-
-        if (totalLiabilities == 0) return type(uint256).max;
+        
+        // Siempre que haya assets, debe haber un ratio calculable
+        if (totalLiabilities == 0) {
+            return totalAssets > 0 ? RATIO_DECIMALS * 2 : RATIO_DECIMALS; // 200% o 100%
+        }
+        
         return (totalAssets * RATIO_DECIMALS) / totalLiabilities;
     }
 
     function _updateMetrics() internal {
-        uint256 ratio = _calculateSolvencyRatio();
-        
-        metricsHistory.push(HistoricalMetric({
-            timestamp: block.timestamp,
-            solvencyRatio: ratio
-        }));
-
         uint256 totalAssets = _sumArray(currentAssets.values);
         uint256 totalLiabilities = _sumArray(currentLiabilities.values);
+        uint256 ratio = _calculateSolvencyRatio();
 
+        // Debug log
         emit SolvencyMetricsUpdated(
             totalAssets,
             totalLiabilities,
             ratio,
             block.timestamp
         );
+        
+        metricsHistory.push(HistoricalMetric({
+            timestamp: block.timestamp,
+            solvencyRatio: ratio,
+            assets: currentAssets,
+            liabilities: currentLiabilities
+        }));
 
-        if (ratio < CRITICAL_SOLVENCY_RATIO) {
-            emit RiskAlert(
-                "CRITICAL_SOLVENCY",
-                ratio,
-                CRITICAL_SOLVENCY_RATIO,
-                block.timestamp
-            );
+        // Actualizar alertas basadas en el ratio real
+        if (ratio < CRITICAL_RATIO) {
+            emit RiskAlert("CRITICAL", ratio, totalAssets, totalLiabilities);
         } else if (ratio < MIN_SOLVENCY_RATIO) {
-            emit RiskAlert(
-                "LOW_SOLVENCY",
-                ratio,
-                MIN_SOLVENCY_RATIO,
-                block.timestamp
-            );
+            emit RiskAlert("HIGH_RISK", ratio, totalAssets, totalLiabilities);
         }
     }
 

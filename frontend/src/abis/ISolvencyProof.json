@@ -9,7 +9,7 @@
         {
           "indexed": false,
           "internalType": "string",
-          "name": "riskType",
+          "name": "riskLevel",
           "type": "string"
         },
         {
@@ -52,7 +52,7 @@
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "solvencyRatio",
+          "name": "healthFactor",
           "type": "uint256"
         },
         {
@@ -159,6 +159,60 @@
           "internalType": "uint256[]",
           "name": "ratios",
           "type": "uint256[]"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address[]",
+              "name": "tokens",
+              "type": "address[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "amounts",
+              "type": "uint256[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "values",
+              "type": "uint256[]"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct ISolvencyProof.ProtocolAssets[]",
+          "name": "assets",
+          "type": "tuple[]"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address[]",
+              "name": "tokens",
+              "type": "address[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "amounts",
+              "type": "uint256[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "values",
+              "type": "uint256[]"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct ISolvencyProof.ProtocolLiabilities[]",
+          "name": "liabilities",
+          "type": "tuple[]"
         }
       ],
       "stateMutability": "view",
@@ -175,6 +229,52 @@
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "tokens",
+          "type": "address[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "amounts",
+          "type": "uint256[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "values",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "updateAssets",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "tokens",
+          "type": "address[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "amounts",
+          "type": "uint256[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "values",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "updateLiabilities",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {

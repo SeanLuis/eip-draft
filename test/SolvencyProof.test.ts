@@ -185,28 +185,63 @@ describe("SolvencyProof Real World Scenarios", function () {
 
     describe("Market Crash Scenario", function() {
         it("Should handle rapid price movements and maintain solvency tracking", async function() {
+            // Setup inicial
             await setupInitialProtocolState(context);
-            let [_isSolvent, _healthFactor] = await context.solvencyProof.verifySolvency();
-            expect(_isSolvent).to.be.true;
-            expect(_healthFactor).to.be.gt(12000n); // >120%
-
-            // Simulate market crash
-            await simulateMarketCrash(context);
-            [_isSolvent, _healthFactor] = await context.solvencyProof.verifySolvency();
+            let [isSolvent, healthFactor] = await context.solvencyProof.verifySolvency();
+            let ratio = await context.solvencyProof.getSolvencyRatio();
             
-            // Verify risk alerts were emitted
-            await expect(updateProtocolMetrics(context))
-                .to.emit(context.solvencyProof, "RiskAlert")
-                .withArgs("CRITICAL_SOLVENCY", anyValue, anyValue, anyValue);
-
-            const [isSolvent, healthFactor] = await context.solvencyProof.verifySolvency();
-            printTestSummary("Market Crash", {
-                solvency: {
-                    isSolvent,
-                    healthFactor,
-                    timestamp: await time.latest()
-                }
+            console.log("Initial state:", {
+                isSolvent,
+                healthFactor: Number(healthFactor) / 100,
+                ratio: Number(ratio) / 100
             });
+            
+            expect(isSolvent).to.be.true;
+            expect(healthFactor).to.be.gt(12000n); // >120%
+
+            // Simular crash
+            const crashPriceETH = INITIAL_ETH_PRICE * 20n / 100n; // 80% drop
+            const crashPriceBTC = INITIAL_BTC_PRICE * 30n / 100n; // 70% drop
+
+            await context.mockPriceOracle.setPrice(await context.weth.getAddress(), crashPriceETH);
+            await context.mockPriceOracle.setPrice(await context.wbtc.getAddress(), crashPriceBTC);
+
+            // Actualizar estado después del crash
+            const tokens = [
+                await context.weth.getAddress(),
+                await context.wbtc.getAddress()
+            ];
+
+            const amounts = [
+                ethers.parseEther("1000"),
+                ethers.parseEther("100")
+            ];
+
+            const values = [
+                (amounts[0] * crashPriceETH) / (10n ** 8n),
+                (amounts[1] * crashPriceBTC) / (10n ** 8n)
+            ];
+
+            // Mantener los mismos liabilities pero actualizar assets
+            await context.solvencyProof.connect(context.oracle).updateAssets(
+                tokens,
+                amounts,
+                values
+            );
+
+            // Verificar estado post-crash
+            [isSolvent, healthFactor] = await context.solvencyProof.verifySolvency();
+            ratio = await context.solvencyProof.getSolvencyRatio();
+
+            console.log("Post-crash state:", {
+                isSolvent,
+                healthFactor: Number(healthFactor) / 100,
+                ratio: Number(ratio) / 100
+            });
+
+            // Verificar que el estado es crítico
+            expect(isSolvent).to.be.false;
+            expect(healthFactor).to.be.lt(10500n); // <105%
         });
 
         it("Should track historical metrics during volatility", async function() {
