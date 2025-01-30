@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
-import { createChart, CrosshairMode, LineStyle } from 'lightweight-charts'
+import { createChart, CrosshairMode, LineStyle, type ChartOptions, type DeepPartial } from 'lightweight-charts'
 
 const props = defineProps<{
   data: Array<{
@@ -40,90 +40,128 @@ const chartContainer = ref<HTMLElement | null>(null)
 const selectedPeriod = ref('1D')
 let chart: any = null
 let mainSeries: any = null
+let criticalLine: any = null
+let warningLine: any = null
 
 const timePeriods = [
-  { label: '1D', value: '1D' },
-  { label: '1W', value: '1W' },
-  { label: '1M', value: '1M' },
-  { label: 'ALL', value: 'ALL' }
-]
+  { label: '1D', value: '1D', hours: 24 },
+  { label: '1W', value: '1W', hours: 168 },
+  { label: '1M', value: '1M', hours: 720 },
+  { label: 'ALL', value: 'ALL', hours: -1 }
+] as const
 
+// Add filterDataByPeriod function
+const filterDataByPeriod = (period: string) => {
+  if (!props.data.length) return []
+  
+  const now = Date.now() / 1000
+  const periodHours = timePeriods.find(p => p.value === period)?.hours || 24
+  
+  if (periodHours === -1) return props.data // ALL period
+  
+  const cutoff = now - (periodHours * 3600)
+  return props.data.filter(item => item.timestamp >= cutoff)
+}
+
+// Update chart configuration with proper types
+const chartConfig: DeepPartial<ChartOptions> = {
+  layout: {
+    background: { color: '#ffffff' },
+    textColor: '#333',
+  },
+  grid: {
+    vertLines: { color: '#f0f0f0' },
+    horzLines: { color: '#f0f0f0' },
+  },
+  crosshair: {
+    mode: CrosshairMode.Normal,
+    vertLine: {
+      width: 1 as const,
+      color: '#2962FF',
+      style: LineStyle.Dashed,
+    },
+    horzLine: {
+      width: 1 as const,
+      color: '#2962FF',
+      style: LineStyle.Dashed,
+    },
+  },
+  rightPriceScale: {
+    borderColor: '#dde0e3',
+    scaleMargins: {
+      top: 0.1,
+      bottom: 0.1,
+    },
+    mode: 1, // Percentage mode
+    borderVisible: true,
+  },
+  timeScale: {
+    borderColor: '#dde0e3',
+    timeVisible: true,
+    secondsVisible: false,
+  },
+}
+
+// Update updateChartData function
+const updateChartData = () => {
+  if (!mainSeries || !chart) return
+
+  const filteredData = filterDataByPeriod(selectedPeriod.value)
+  const formattedData = filteredData.map(item => ({
+    time: item.timestamp,
+    value: item.solvencyRatio / 100,  // Fix ratio scaling
+  }))
+
+  mainSeries.setData(formattedData)
+
+  // Remove existing lines if they exist
+  if (criticalLine) chart.removeSeries(criticalLine)
+  if (warningLine) chart.removeSeries(warningLine)
+
+  // Create new reference lines
+  criticalLine = chart.addLineSeries({
+    color: '#cf222e',
+    lineWidth: 1,
+    lineStyle: LineStyle.Dashed,
+  })
+
+  warningLine = chart.addLineSeries({
+    color: '#bf8700',
+    lineWidth: 1,
+    lineStyle: LineStyle.Dashed,
+  })
+
+  const referenceData = filteredData.map(d => ({
+    time: d.timestamp,
+  }))
+
+  criticalLine.setData(referenceData.map(d => ({ ...d, value: 120 })))
+  warningLine.setData(referenceData.map(d => ({ ...d, value: 110 })))
+
+  chart.timeScale().fitContent()
+}
+
+// Update onMounted to use the proper type
 onMounted(() => {
   if (!chartContainer.value) return
 
-  chart = createChart(chartContainer.value, {
-    layout: {
-      background: { color: '#ffffff' },
-      textColor: '#333',
-    },
-    grid: {
-      vertLines: { color: '#f0f0f0' },
-      horzLines: { color: '#f0f0f0' },
-    },
-    crosshair: {
-      mode: CrosshairMode.Normal,
-      vertLine: {
-        width: 1,
-        color: '#2962FF',
-        style: LineStyle.Dashed,
-      },
-      horzLine: {
-        width: 1,
-        color: '#2962FF',
-        style: LineStyle.Dashed,
-      },
-    },
-    rightPriceScale: {
-      borderColor: '#dde0e3',
-      scaleMargins: {
-        top: 0.1,
-        bottom: 0.1,
-      },
-    },
-    timeScale: {
-      borderColor: '#dde0e3',
-      timeVisible: true,
-      secondsVisible: false,
-    },
-  })
+  chart = createChart(chartContainer.value, chartConfig)
 
   mainSeries = chart.addAreaSeries({
-    lineColor: '#2962FF',
-    topColor: 'rgba(41, 98, 255, 0.3)',
-    bottomColor: 'rgba(41, 98, 255, 0.0)',
+    lineColor: '#2da44e',
+    topColor: 'rgba(45, 164, 78, 0.3)',
+    bottomColor: 'rgba(45, 164, 78, 0.0)',
     lineWidth: 2,
     priceFormat: {
       type: 'percent',
+      precision: 2,
     },
   })
-
-  // Agregar líneas de referencia
-  const criticalLine = chart.addLineSeries({
-    color: '#ef4444',
-    lineWidth: 1,
-    lineStyle: LineStyle.Dashed,
-  })
-
-  const warningLine = chart.addLineSeries({
-    color: '#f59e0b',
-    lineWidth: 1,
-    lineStyle: LineStyle.Dashed,
-  })
-
-  criticalLine.setData(props.data.map(d => ({
-    time: d.timestamp,
-    value: 120, // Línea crítica en 120%
-  })))
-
-  warningLine.setData(props.data.map(d => ({
-    time: d.timestamp,
-    value: 150, // Línea de advertencia en 150%
-  })))
 
   updateChartData()
   
   const resizeObserver = new ResizeObserver(() => {
-    if (chartContainer.value) {
+    if (chartContainer.value && chart) {
       chart.applyOptions({
         width: chartContainer.value.clientWidth,
         height: chartContainer.value.clientHeight,
@@ -134,22 +172,8 @@ onMounted(() => {
   resizeObserver.observe(chartContainer.value)
 })
 
-const updateChartData = () => {
-  if (!mainSeries) return
-
-  const formattedData = props.data.map(item => ({
-    time: new Date(item.timestamp).getTime() / 1000,
-    value: item.solvencyRatio / 100,
-  }))
-
-  mainSeries.setData(formattedData)
-  chart.timeScale().fitContent()
-}
-
 watch(() => props.data, updateChartData, { deep: true })
 watch(selectedPeriod, (newPeriod) => {
-  // Aquí puedes implementar la lógica para filtrar los datos según el período seleccionado
-  // Por ahora solo actualizamos los datos completos
   updateChartData()
 })
 

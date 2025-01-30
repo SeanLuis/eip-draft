@@ -87,27 +87,30 @@ const gaugeArc = computed(() => {
 
 // Update gauge colors to match test scenarios
 const gaugeColor = computed(() => {
-  if (props.value <= 120) return 'stroke-green-500'
-  if (props.value <= 180) return 'stroke-orange-500'
-  if (props.value <= 200) return 'stroke-red-500'
-  return 'stroke-purple-500'
+  if (props.value <= 105) return 'stroke-[#cf222e]' // Critical below 105%
+  if (props.value <= 110) return 'stroke-[#bc4c00]' // High risk 105-110%
+  if (props.value <= 120) return 'stroke-[#bf8700]' // Warning 110-120%
+  return 'stroke-[#2da44e]' // Healthy above 120%
 })
 
 const getRiskLabel = () => {
-  if (props.value <= 110) return 'Low Risk'
-  if (props.value <= 150) return 'Medium Risk'
-  return 'High Risk'
+  if (props.value <= 105) return 'Critical'
+  if (props.value <= 110) return 'High Risk'
+  if (props.value <= 120) return 'Warning'
+  return 'Healthy'
 }
 
 const getRiskClass = () => {
-  if (props.value <= 110) return 'bg-green-100 text-green-800'
-  if (props.value <= 150) return 'bg-yellow-100 text-yellow-800'
-  return 'bg-red-100 text-red-800'
+  if (props.value <= 105) return 'bg-[#cf222e] text-white'
+  if (props.value <= 110) return 'bg-[#bc4c00] text-white'
+  if (props.value <= 120) return 'bg-[#bf8700] text-white'
+  return 'bg-[#2da44e] text-white'
 }
 
 const getTextColor = () => {
-  if (props.value <= 110) return '#22c55e'
-  if (props.value <= 150) return '#eab308'
-  return '#ef4444'
+  if (props.value <= 105) return '#cf222e'
+  if (props.value <= 110) return '#bc4c00'
+  if (props.value <= 120) return '#bf8700'
+  return '#2da44e'
 }
 </script>

@@ -15,13 +15,13 @@
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
             </svg>
-            +{{ trendValue }}%
+            {{ formatValue(trendValue) }}%
           </span>
           <span v-else-if="trend === 'down'" class="flex items-center">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
             </svg>
-            -{{ trendValue }}%
+            {{ formatValue(trendValue) }}%
           </span>
           <span v-else class="flex items-center">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -52,9 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-
-const props = defineProps<{
+interface Props {
   title: string;
   subtitle?: string;
   value: number;
@@ -62,31 +60,39 @@ const props = defineProps<{
   trendValue?: number;
   dailyChange?: number;
   weeklyAverage?: number;
-}>();
+}
 
-const formatValue = (value: number): string => {
+import { computed } from 'vue';
+
+const formatValue = (value?: number): string => {
+  if (!value) return '$0'
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-    notation: 'compact'
-  }).format(value);
-};
+    maximumFractionDigits: 0
+  }).format(value)
+}
 
 const formatPercentage = (value?: number): string => {
-  if (!value) return '0%';
-  return `${value > 0 ? '+' : ''}${value.toFixed(2)}%`;
-};
+  if (!value || isNaN(value)) return '0%'
+  const fixedValue = value.toFixed(2)
+  return `${value > 0 ? '+' : ''}${fixedValue}%`
+}
 
-const trendColorClass = computed(() => ({
-  'up': 'text-green-500',
-  'down': 'text-red-500',
-  'stable': 'text-gray-500'
-}[props.trend]));
+const props = defineProps<Props>();
+
+const trendColorClass = computed(() => {
+  const colors = {
+    'up': 'text-[#2da44e]',
+    'down': 'text-[#cf222e]',
+    'stable': 'text-[#57606a]'
+  } as const;
+  return colors[props.trend];
+});
 
 const dailyChangeColor = computed(() => {
-  if (!props.dailyChange) return 'text-gray-900';
-  return props.dailyChange > 0 ? 'text-green-600' : props.dailyChange < 0 ? 'text-red-600' : 'text-gray-900';
+  if (!props.dailyChange) return 'text-[#57606a]';
+  return props.dailyChange > 0 ? 'text-[#2da44e]' : props.dailyChange < 0 ? 'text-[#cf222e]' : 'text-[#57606a]';
 });
 </script>

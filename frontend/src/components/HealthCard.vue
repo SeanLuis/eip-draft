@@ -22,7 +22,7 @@
       <div class="flex flex-col items-end">
         <span class="text-sm font-medium text-gray-600">Health Factor</span>
         <span :class="[`text-${getRiskLevel()}-600`, 'text-sm font-semibold']">
-          {{ getRiskLevel() === 'green' ? 'Low' : getRiskLevel() === 'yellow' ? 'Medium' : 'High' }}
+          {{ getRiskLevel() === 'Healthy' ? 'Low' : getRiskLevel() === 'Warning' ? 'Medium' : 'High' }}
         </span>
       </div>
     </div>
@@ -32,7 +32,7 @@
       <div class="relative">
         <div class="h-3 bg-gray-100 rounded-full">
           <div 
-            :style="`width: ${Math.min(solvencyRatio, 200)}%`"
+            :style="`width: ${Math.min((solvencyRatio / 2), 100)}%`"
             :class="[progressColorClass, 'h-full rounded-full transition-all duration-500']"
           ></div>
         </div>
@@ -40,14 +40,9 @@
         <!-- Markers -->
         <div class="flex justify-between mt-2 px-1">
           <span class="text-xs text-gray-500">0%</span>
-          <span class="text-xs text-gray-500 absolute left-[97px]">100%</span>
-          <span class="text-xs text-gray-500 absolute left-[147px]">150%</span>
+          <span class="text-xs text-gray-500 absolute left-[50px]">100%</span>
           <span class="text-xs text-gray-500 absolute right-0">200%</span>
         </div>
-        
-        <!-- Marker Lines -->
-        <div class="absolute top-0 left-[100px] w-px h-2 bg-gray-400"></div>
-        <div class="absolute top-0 left-[150px] w-px h-2 bg-gray-400"></div>
       </div>
     </div>
 
@@ -68,33 +63,43 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-interface Props {
+// Calculate 24h change and 7d average from history if available
+const props = withDefaults(defineProps<{
   solvencyRatio: number
   healthStatus: string
+  dailyChange?: number
+  weeklyAverage?: number
+}>(), {
+  dailyChange: 0,
+  weeklyAverage: 0
+})
+
+const formatRatio = (value: number): string => {
+  return value.toFixed(2)  // No need for extra division, value is already correct
 }
 
-const props = defineProps<Props>()
+const statusColorClass = computed(() => {
+  const ratio = props.solvencyRatio
+  if (ratio >= 120) return 'bg-[#2da44e] text-white'
+  if (ratio >= 110) return 'bg-[#bf8700] text-white'
+  if (ratio >= 105) return 'bg-[#bc4c00] text-white'
+  return 'bg-[#cf222e] text-white'
+})
 
-const formatRatio = (value: number): string => value.toFixed(2)
-
-const statusColorClass = computed(() => ({
-  'HEALTHY': 'bg-green-100 text-green-800',
-  'WARNING': 'bg-yellow-100 text-yellow-800',
-  'HIGH_RISK': 'bg-orange-100 text-orange-800',
-  'CRITICAL': 'bg-red-100 text-red-800'
-}[props.healthStatus]))
-
-const progressColorClass = computed(() => ({
-  'HEALTHY': 'bg-green-500',
-  'WARNING': 'bg-yellow-500',
-  'HIGH_RISK': 'bg-orange-500',
-  'CRITICAL': 'bg-red-500'
-}[props.healthStatus]))
+const progressColorClass = computed(() => {
+  const ratio = props.solvencyRatio
+  if (ratio >= 120) return 'bg-[#2da44e]'
+  if (ratio >= 110) return 'bg-[#bf8700]'
+  if (ratio >= 105) return 'bg-[#bc4c00]'
+  return 'bg-[#cf222e]'
+})
 
 const getRiskLevel = () => {
-  if (props.solvencyRatio <= 110) return 'green'
-  if (props.solvencyRatio <= 150) return 'yellow'
-  return 'red'
+  const ratio = props.solvencyRatio
+  if (ratio <= 105) return 'Critical'
+  if (ratio <= 110) return 'High Risk'
+  if (ratio <= 120) return 'Warning'
+  return 'Healthy'
 }
 
 const getTrend = () => {
