@@ -52,7 +52,7 @@ onMounted(() => {
   })
 
   priceSeries = chart.addLineSeries({
-    color: '#10b981', // Green color for ETH
+    color: '#3b82f6', // Green color for ETH
     lineWidth: 2,
     priceFormat: {
       type: 'price',

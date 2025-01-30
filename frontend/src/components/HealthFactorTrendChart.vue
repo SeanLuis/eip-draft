@@ -74,9 +74,9 @@ onMounted(() => {
 
   // Main health factor series
   healthFactorSeries = chart.addAreaSeries({
-    lineColor: '#3b82f6',
-    topColor: 'rgba(59, 130, 246, 0.4)',
-    bottomColor: 'rgba(59, 130, 246, 0.0)',
+    lineColor: '#10b981',
+    topColor: 'rgba(16, 185, 129, 0.4)',
+    bottomColor: 'rgba(16, 185, 129, 0.0)',
     lineWidth: 2,
     priceFormat: {
       type: 'percent',
