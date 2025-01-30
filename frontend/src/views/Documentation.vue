@@ -125,36 +125,10 @@
 </template>
 
 <script setup lang="ts">
-const healthLevels = [
-  {
-    name: 'Healthy',
-    range: '≥120%',
-    description: 'Protocol has sufficient buffer against market volatility',
-    bgColor: 'bg-green-50',
-    textColor: 'text-green-800'
-  },
-  {
-    name: 'Warning',
-    range: '110-120%',
-    description: 'Monitor closely, consider risk reduction',
-    bgColor: 'bg-yellow-50',
-    textColor: 'text-yellow-800'
-  },
-  {
-    name: 'High Risk',
-    range: '105-110%',
-    description: 'Immediate action required',
-    bgColor: 'bg-orange-50',
-    textColor: 'text-orange-800'
-  },
-  {
-    name: 'Critical',
-    range: '<105%',
-    description: 'Emergency measures needed',
-    bgColor: 'bg-red-50',
-    textColor: 'text-red-800'
-  }
-]
+import hljs from 'highlight.js';
+import javascript from 'highlight.js/lib/languages/javascript';
+
+hljs.registerLanguage('javascript', javascript);
 </script>
 
 <style scoped>
