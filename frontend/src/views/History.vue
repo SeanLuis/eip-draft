@@ -1,9 +1,7 @@
 <template>
-  <div class="min-h-screen bg-[#f6f8fa] p-6">
-    <div class="max-w-7xl mx-auto bg-white rounded-lg">
-      <div class="p-6">
-        <h2 class="text-xl font-bold mb-4">Solvency Metrics</h2>
-        <div class="text-gray-600 mb-6">
+  <div class="min-h-screen bg-[#fafafa] relative">
+    <h1 class="text-2xl font-semibold text-gray-900">Solvency Metrics</h1>
+        <div class="text-gray-600 my-6">
           Historical solvency data based on:
           <ul class="list-disc pl-5 mt-2">
             <li>Solvency Ratio (SR) = (TA / TL) × 100</li>
@@ -110,8 +108,6 @@
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
   </div>
 </template>
 

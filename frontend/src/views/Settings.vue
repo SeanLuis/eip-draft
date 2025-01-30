@@ -1,149 +1,205 @@
 <template>
-  <div class="min-h-screen bg-[#f6f8fa] p-6 relative">
+  <div class="min-h-screen bg-[#fafafa] relative">
     <!-- Loading Overlay -->
-    <div v-if="isLoading" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white p-4 rounded-lg shadow-lg">
-        <div class="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mb-2"></div>
-        <p class="text-sm text-gray-600">{{ updateProgress.message }}</p>
+    <div v-if="isLoading" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+      <div class="bg-white p-6 rounded-lg shadow-xl">
+        <div class="flex flex-col items-center">
+          <div class="animate-spin h-8 w-8 border-3 border-blue-600 border-t-transparent rounded-full"></div>
+          <p class="mt-4 text-sm text-gray-600">{{ updateProgress.message }}</p>
+        </div>
       </div>
     </div>
 
-    <div class="max-w-5xl mx-auto space-y-6">
-      <!-- Initial Price Setup Section -->
-      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 class="text-xl font-bold mb-4">Initial Price Setup</h2>
-        <div class="text-sm text-gray-600 mb-4">
-          <p>Set initial prices for protocol tokens:</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div v-for="(config, symbol) in TOKEN_LIST" :key="symbol" class="border rounded-lg p-4">
-            <h3 class="font-semibold mb-2">{{ symbol }}</h3>
-            <div class="flex gap-2 items-center">
-              <input 
-                type="number" 
-                v-model="tokenPriceInputs[symbol]" 
-                class="w-full px-3 py-2 border rounded" 
-                :placeholder="String(Number(config.initialPrice) / 1e8)"
-              />
-              <button 
-                @click="updateTokenPrice(symbol, Number(tokenPriceInputs[symbol]))"
-                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              >
-                Update
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-4 flex gap-4">
-          <button @click="setupInitialPrices" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-            Set All Initial Prices
-          </button>
-          <button @click="randomizeAllPrices" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-            Randomize Prices
-          </button>
-        </div>
+    <!-- Main Content -->
+    
+    <div class="flex items-center justify-between mb-8">
+        <h1 class="text-2xl font-semibold text-gray-900">Protocol Settings</h1>
+        <button 
+          @click="saveSettings" 
+          class="inline-flex items-center px-4 py-2 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-800 transition-colors"
+        >
+          Save Changes
+        </button>
       </div>
 
-      <!-- Test Scenarios Section -->
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <h2 class="text-xl font-bold mb-4">Protocol Test Scenarios</h2>
-        <div class="text-sm text-gray-600 mb-4">
-          <p>Configure and run market simulation scenarios:</p>
-        </div>
+      <!-- Initial Price Setup Section -->
+      <div class="space-y-6">
+        <section class="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div class="p-6">
+            <h2 class="text-lg font-medium text-gray-900 mb-1">Initial Price Setup</h2>
+            <p class="text-sm text-gray-500 mb-6">Configure base prices for protocol tokens</p>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Market Crash -->
-          <div class="border rounded-lg p-4">
-            <h3 class="font-semibold mb-2">Market Crash Test</h3>
-            <p class="text-sm text-gray-600 mb-4">
-              Simulates severe market downturn affecting all assets:
-              <br>- ETH: -{{ settings.simulation.ethDrop }}%
-              <br>- BTC: -{{ settings.simulation.btcDrop }}%
-            </p>
-            <div class="space-y-3">
-              <div>
-                <label class="block text-sm font-medium mb-1">ETH Drop (%)</label>
-                <input v-model="settings.simulation.ethDrop" type="number" class="w-full rounded border p-2" />
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              <div v-for="(config, symbol) in TOKEN_LIST" 
+                   :key="symbol" 
+                   class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-gray-300 transition-colors"
+              >
+                <div class="flex justify-between items-center mb-3">
+                  <h3 class="font-medium text-gray-900">{{ symbol }}</h3>
+                  <span class="text-xs text-gray-500">Current Price</span>
+                </div>
+                <div class="flex gap-2">
+                  <div class="relative flex-1">
+                    <span class="absolute inset-y-0 left-3 flex items-center text-gray-500">$</span>
+                    <input 
+                      type="number" 
+                      v-model="tokenPriceInputs[symbol]" 
+                      class="w-full pl-8 pr-3 py-2 border-gray-200 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500" 
+                      :placeholder="String(Number(config.initialPrice) / 1e8)"
+                    />
+                  </div>
+                  <button 
+                    @click="updateTokenPrice(symbol, Number(tokenPriceInputs[symbol]))"
+                    class="px-3 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors"
+                  >
+                    Set
+                  </button>
+                </div>
               </div>
-              <div>
-                <label class="block text-sm font-medium mb-1">BTC Drop (%)</label>
-                <input v-model="settings.simulation.btcDrop" type="number" class="w-full rounded border p-2" />
-              </div>
-              <button @click="simulateMarketCrash" class="w-full bg-red-500 text-white px-4 py-2 rounded">
-                Run Crash Test
+            </div>
+
+            <div class="flex gap-3">
+              <button 
+                @click="setupInitialPrices" 
+                class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Reset to Default
+              </button>
+              <button 
+                @click="randomizeAllPrices"
+                class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Randomize All
               </button>
             </div>
           </div>
+        </section>
 
-          <!-- Volatility -->
-          <div class="border rounded-lg p-4">
-            <h3 class="font-semibold mb-2">Volatility Test</h3>
-            <p class="text-sm text-gray-600 mb-4">
-              Tests price fluctuations for ETH and BTC:
-              <br>- ±{{ settings.simulation.volatility }}% random price swings
-              <br>- Different volatility patterns for each asset
-              <br>- 5 price points over {{ settings.simulation.duration }}h
-            </p>
-            <div class="space-y-3">
-              <div>
-                <label class="block text-sm font-medium mb-1">Volatility Range (%)</label>
-                <input v-model="settings.simulation.volatility" type="number" class="w-full rounded border p-2" />
+        <!-- Test Scenarios Section -->
+        <section class="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div class="p-6">
+            <h2 class="text-lg font-medium text-gray-900 mb-1">Market Scenarios</h2>
+            <p class="text-sm text-gray-500 mb-6">Test protocol behavior under different market conditions</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Market Crash Scenario -->
+              <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <h3 class="font-medium text-gray-900 mb-2">Market Crash Simulation</h3>
+                <p class="text-sm text-gray-500 mb-4">Simulates a severe market downturn</p>
+                
+                <div class="space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ETH Drop (%)</label>
+                    <input 
+                      v-model="settings.simulation.ethDrop" 
+                      type="number" 
+                      class="w-full px-3 py-2 border-gray-200 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500" 
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">BTC Drop (%)</label>
+                    <input 
+                      v-model="settings.simulation.btcDrop" 
+                      type="number" 
+                      class="w-full px-3 py-2 border-gray-200 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500" 
+                    />
+                  </div>
+                  <button 
+                    @click="simulateMarketCrash"
+                    class="w-full px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+                  >
+                    Run Crash Simulation
+                  </button>
+                </div>
               </div>
-              <div>
-                <label class="block text-sm font-medium mb-1">Duration (hours)</label>
-                <input v-model="settings.simulation.duration" type="number" class="w-full rounded border p-2" />
+
+              <!-- Volatility Scenario -->
+              <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <h3 class="font-medium text-gray-900 mb-2">Volatility Simulation</h3>
+                <p class="text-sm text-gray-500 mb-4">Tests price fluctuation impacts</p>
+                
+                <div class="space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Volatility Range (%)</label>
+                    <input 
+                      v-model="settings.simulation.volatility" 
+                      type="number" 
+                      class="w-full px-3 py-2 border-gray-200 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500" 
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Duration (hours)</label>
+                    <input 
+                      v-model="settings.simulation.duration" 
+                      type="number" 
+                      class="w-full px-3 py-2 border-gray-200 rounded-md focus:border-blue-500 focus:ring-1 focus:ring-blue-500" 
+                    />
+                  </div>
+                  <button 
+                    @click="simulateVolatility"
+                    class="w-full px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors"
+                  >
+                    Run Volatility Test
+                  </button>
+                </div>
               </div>
-              <button @click="simulateVolatility" class="w-full bg-yellow-500 text-white px-4 py-2 rounded">
-                Run Volatility Test
-              </button>
             </div>
           </div>
-        </div>
+        </section>
 
         <!-- Test Results -->
-        <div v-if="testResults" class="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h3 class="font-semibold mb-2">Test Results: {{ testResults.testName }}</h3>
-          <div class="space-y-4">
-            <!-- Estado actual -->
-            <div class="text-sm space-y-2">
-              <p>Current Health Factor: {{ formatRatio(Number(testResults.healthFactor)) }}%</p>
-              <p>Solvency Status: {{ testResults.isSolvent ? 'Solvent' : 'Critical' }}</p>
+        <section v-if="testResults" class="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-medium text-gray-900">Test Results: {{ testResults.testName }}</h3>
+              <span :class="{
+                'px-2 py-1 text-sm rounded-full': true,
+                'bg-green-100 text-green-800': testResults.isSolvent,
+                'bg-red-100 text-red-800': !testResults.isSolvent
+              }">
+                {{ testResults.isSolvent ? 'Solvent' : 'Critical' }}
+              </span>
             </div>
 
-            <!-- Historial de cambios -->
-            <div v-if="testResults.priceChanges" class="mt-4">
-              <h4 class="font-medium mb-2">Price Changes History:</h4>
-              <div class="overflow-x-auto">
-                <table class="min-w-full text-sm">
-                  <thead>
-                    <tr class="bg-gray-100">
-                      <th class="p-2 text-left">Step</th>
-                      <th class="p-2 text-left">Token</th>
-                      <th class="p-2 text-right">Old Price</th>
-                      <th class="p-2 text-right">New Price</th>
-                      <th class="p-2 text-right">Change</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="change in testResults.priceChanges" :key="change.step" class="border-t">
-                      <td class="p-2">{{ change.step }}</td>
-                      <td class="p-2">{{ change.token }}</td>
-                      <td class="p-2 text-right">${{ formatNumber(change.oldPrice) }}</td>
-                      <td class="p-2 text-right">${{ formatNumber(change.newPrice) }}</td>
-                      <td class="p-2 text-right" :class="getPriceChangeColor(change.percentChange)">
-                        {{ formatPercentChange(change.percentChange) }}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+            <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+              <div class="text-sm space-y-2">
+                <p class="flex justify-between">
+                  <span class="text-gray-600">Health Factor:</span>
+                  <span class="font-medium">{{ formatRatio(Number(testResults.healthFactor)) }}%</span>
+                </p>
               </div>
             </div>
+
+            <div v-if="testResults.priceChanges" class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                  <tr class="text-sm text-gray-500">
+                    <th class="px-4 py-3 text-left">Step</th>
+                    <th class="px-4 py-3 text-left">Token</th>
+                    <th class="px-4 py-3 text-right">Old Price</th>
+                    <th class="px-4 py-3 text-right">New Price</th>
+                    <th class="px-4 py-3 text-right">Change</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  <tr v-for="change in testResults.priceChanges" 
+                      :key="change.step"
+                      class="text-sm"
+                  >
+                    <td class="px-4 py-3 text-gray-900">{{ change.step }}</td>
+                    <td class="px-4 py-3 text-gray-900">{{ change.token }}</td>
+                    <td class="px-4 py-3 text-right text-gray-900">${{ formatNumber(change.oldPrice) }}</td>
+                    <td class="px-4 py-3 text-right text-gray-900">${{ formatNumber(change.newPrice) }}</td>
+                    <td class="px-4 py-3 text-right" :class="getPriceChangeColor(change.percentChange)">
+                      {{ formatPercentChange(change.percentChange) }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        </section>
       </div>
-    </div>
   </div>
 </template>
 
@@ -720,7 +776,12 @@ const getPriceChangeColor = (change: number): string => {
 </script>
 
 <style>
-/* Add any additional custom styles here */
+/* Add any custom styles needed */
+.border-3 {
+  border-width: 3px;
+}
+
+/* Remove spinner buttons from number inputs */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -729,21 +790,5 @@ input[type="number"]::-webkit-inner-spin-button {
 
 input[type="number"] {
   -moz-appearance: textfield;
-}
-
-.status-badge {
-  @apply px-2 py-1 rounded-full text-xs font-medium;
-}
-
-.status-healthy {
-  @apply bg-green-100 text-green-800;
-}
-
-.status-warning {
-  @apply bg-yellow-100 text-yellow-800;
-}
-
-.status-critical {
-  @apply bg-red-100 text-red-800;
 }
 </style>

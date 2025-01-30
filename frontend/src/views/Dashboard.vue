@@ -1,107 +1,84 @@
 <template>
-  <div class="py-6">
-    <header class="mb-8">
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-        <h1 class="text-3xl font-bold leading-tight tracking-tight text-gray-900">Protocol Health Monitor</h1>
-        <button 
-          @click="refreshData" 
-          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          :disabled="isLoading"
-        >
-          <svg 
-            v-if="isLoading" 
-            class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" 
-            xmlns="http://www.w3.org/2000/svg" 
-            fill="none" 
-            viewBox="0 0 24 24"
-          >
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <svg 
-            v-else
-            class="-ml-1 mr-2 h-4 w-4" 
-            xmlns="http://www.w3.org/2000/svg" 
-            fill="none" 
-            viewBox="0 0 24 24" 
-            stroke="currentColor"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          {{ isLoading ? 'Refreshing...' : 'Refresh Data' }}
-        </button>
+  <div>
+    <!-- Header Actions -->
+    <div class="mb-8 flex justify-between items-center">
+      <h1 class="text-2xl font-semibold text-gray-900">Protocol Health Monitor</h1>
+      <button 
+        @click="refreshData" 
+        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+        :disabled="isLoading"
+      >
+        <svg v-if="isLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        {{ isLoading ? 'Refreshing...' : 'Refresh Data' }}
+      </button>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="space-y-6">
+      <!-- Stats Overview -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <HealthCard 
+          class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
+          :solvencyRatio="protocolData.solvencyRatio"
+          :healthStatus="getHealthStatus(protocolData.solvencyRatio)"
+        />
+        <MetricsCard 
+          class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
+          title="Total Assets"
+          subtitle="Current collateral value"
+          :value="protocolData.totalAssets"
+          :trend="assetTrend"
+          :trendValue="assetTrendValue"
+          :dailyChange="assetDailyChange"
+        />
+        <MetricsCard 
+          class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
+          title="Total Liabilities"
+          subtitle="Outstanding debt"
+          :value="protocolData.totalLiabilities"
+          :trend="liabilityTrend"
+          :trendValue="liabilityTrendValue"
+          :dailyChange="liabilityDailyChange"
+        />
       </div>
-    </header>
-    
-    <main>
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <!-- Stats Overview -->
-        <div class="mt-8">
-          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <HealthCard 
-              class="overflow-hidden rounded-lg bg-white shadow transition-all hover:shadow-lg"
-              :solvencyRatio="protocolData.solvencyRatio"
-              :healthStatus="getHealthStatus(protocolData.solvencyRatio)"
-            />
-            <MetricsCard 
-              class="overflow-hidden rounded-lg bg-white shadow transition-all hover:shadow-lg"
-              title="Total Assets"
-              subtitle="Current collateral value"
-              :value="protocolData.totalAssets"
-              :trend="assetTrend"
-              :trendValue="assetTrendValue"
-              :dailyChange="assetDailyChange"
-            />
-            <MetricsCard 
-              class="overflow-hidden rounded-lg bg-white shadow transition-all hover:shadow-lg"
-              title="Total Liabilities"
-              subtitle="Outstanding debt"
-              :value="protocolData.totalLiabilities"
-              :trend="liabilityTrend"
-              :trendValue="liabilityTrendValue"
-              :dailyChange="liabilityDailyChange"
-            />
+
+      <!-- Charts Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- ETH Price Chart -->
+        <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-6 h-[400px]">
+            <ETHTrendChart :data="protocolData.history" />
           </div>
         </div>
 
-        <!-- Charts Section -->
-        <div class="mt-8">
-          <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <!-- ETH Price Chart -->
-            <section class="rounded-lg bg-white shadow h-[400px] overflow-hidden">
-              <div class="p-6 h-full">
-                <ETHTrendChart :data="protocolData.history" />
-              </div>
-            </section>
-
-            <!-- BTC Price Chart -->
-            <section class="rounded-lg bg-white shadow h-[400px] overflow-hidden">
-              <div class="p-6 h-full">
-                <BTCTrendChart :data="protocolData.history" />
-              </div>
-            </section>
-          </div>
-
-          <!-- Health Factor Trend (Full Width) -->
-          <div class="mt-8">
-            <section class="rounded-lg bg-white shadow h-[400px] overflow-hidden">
-              <div class="p-6 h-full">
-                <HealthFactorTrendChart :data="protocolData.history" />
-              </div>
-            </section>
-          </div>
-
-          <!-- Risk Gauge Section -->
-          <div class="mt-8">
-            <section class="rounded-lg bg-white shadow h-[400px] overflow-hidden">
-              <div class="p-6 h-full">
-                <RiskGauge :value="protocolData.solvencyRatio" />
-              </div>
-            </section>
+        <!-- BTC Price Chart -->
+        <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-6 h-[400px]">
+            <BTCTrendChart :data="protocolData.history" />
           </div>
         </div>
       </div>
-    </main>
+
+      <!-- Full Width Charts -->
+      <div class="space-y-6">
+        <!-- Health Factor Trend -->
+        <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-6 h-[400px]">
+            <HealthFactorTrendChart :data="protocolData.history" />
+          </div>
+        </div>
+
+        <!-- Risk Gauge -->
+        <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow">
+          <div class="p-6 h-[400px]">
+            <RiskGauge :value="protocolData.solvencyRatio" />
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 

@@ -11,6 +11,7 @@ export default defineConfig({
       }
     })
   ],
+  assetsInclude: ['**/*.md'],
   resolve: {
     alias: {
       '@': resolve(__dirname, './src')
