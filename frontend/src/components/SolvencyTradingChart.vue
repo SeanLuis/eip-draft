@@ -19,6 +19,7 @@ const chartContainer = ref<HTMLElement | null>(null)
 let chart: any = null
 let solvencyRatioSeries: any = null
 let ethPriceSeries: any = null
+let btcPriceSeries: any = null
 
 onMounted(() => {
   if (!chartContainer.value) return
@@ -70,9 +71,30 @@ onMounted(() => {
     priceScaleId: 'eth',
   })
 
-  // Configurar escala de precios separada para ETH
+  // Add BTC Price Series
+  btcPriceSeries = chart.addLineSeries({
+    color: '#f59e0b', // Amber color for BTC
+    lineWidth: 2,
+    priceFormat: {
+      type: 'price',
+      precision: 2,
+      minMove: 0.01,
+    },
+    title: 'BTC Price',
+    priceScaleId: 'btc',
+  })
+
+  // Configure separate price scales
   chart.priceScale('eth').applyOptions({
     position: 'right',
+    scaleMargins: {
+      top: 0.1,
+      bottom: 0.1,
+    },
+  })
+
+  chart.priceScale('btc').applyOptions({
+    position: 'left',
     scaleMargins: {
       top: 0.1,
       bottom: 0.1,
@@ -95,7 +117,7 @@ onMounted(() => {
 })
 
 const updateChartData = () => {
-  if (!solvencyRatioSeries || !ethPriceSeries) return
+  if (!solvencyRatioSeries || !ethPriceSeries || !btcPriceSeries) return
 
   const formattedData = props.data.map(item => ({
     time: new Date(item.timestamp).getTime() / 1000,
@@ -107,8 +129,14 @@ const updateChartData = () => {
     value: item.ethPrice,
   }))
 
+  const btcData = props.data.map(item => ({
+    time: new Date(item.timestamp).getTime() / 1000,
+    value: item.btcPrice,
+  }))
+
   solvencyRatioSeries.setData(formattedData)
   ethPriceSeries.setData(ethData)
+  btcPriceSeries.setData(btcData)
   
   chart.timeScale().fitContent()
 }

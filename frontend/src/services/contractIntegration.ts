@@ -47,18 +47,30 @@ export class SolvencyProofService {
   }
 
   async write(contractInstance: any, method: string, args: any[]): Promise<Hash> {
-    if (!this.walletClient || !this.publicClient) throw new Error('Clients not initialized')
+    if (!this.walletClient || !this.publicClient || !this.walletClient.account) {
+      throw new Error('Clients or account not initialized')
+    }
     
     try {
+      // Get the latest nonce before each transaction
+      const nonce = await this.publicClient.getTransactionCount({
+        address: this.walletClient.account.address
+      })
+
       const { request } = await contractInstance.simulate[method](
         args,
         { 
           account: this.walletClient.account,
-          chain: this.walletClient.chain
+          chain: this.walletClient.chain,
+          nonce // Add nonce to the transaction
         }
       )
       
-      const hash = await this.walletClient.writeContract(request)
+      const hash = await this.walletClient.writeContract({
+        ...request,
+        account: this.walletClient.account,
+        nonce // Add nonce to the write request too
+      })
       const receipt = await this.publicClient.waitForTransactionReceipt({ hash })
       return receipt.transactionHash
     } catch (error: any) {
@@ -295,41 +307,74 @@ export class SolvencyProofService {
   }
 
   async simulateVolatility(
-    token: `0x${string}`,
-    baseAmount: bigint,
     volatilityPercent: number,
     steps: number = 5
   ): Promise<SimulationResult[]> {
     if (!this.priceOracle || !this.walletClient) throw new Error('Service not initialized')
     
-    const initialPrice = Number(await this.priceOracle.read.getPrice([token])) / 1e8
-    let lastPrice = initialPrice
-    const results = []
+    const tokens = {
+      eth: addresses.tokens.weth as `0x${string}`,
+      btc: addresses.tokens.wbtc as `0x${string}`
+    }
+
+    // Get initial prices and ensure they're positive
+    const initialPrices = {
+      eth: Math.max(Number(await this.priceOracle.read.getPrice([tokens.eth])) / 1e8, 0),
+      btc: Math.max(Number(await this.priceOracle.read.getPrice([tokens.btc])) / 1e8, 0)
+    }
+
+    let lastPrices = { ...initialPrices }
+    const results: SimulationResult[] = []
 
     for (let i = 0; i < steps; i++) {
-      const progress = i / (steps - 1)
-      const volatility = Math.sin(progress * Math.PI) * (volatilityPercent / 100)
-      const newPrice = initialPrice * (1 + volatility)
-      
-      // Update oracle with new price
-      const oraclePrice = BigInt(Math.floor(newPrice * 1e8))
-      await this.updateOraclePrice(token, oraclePrice)
-      
-      // Get updated metrics
-      const metrics = await this.getSolvencyMetrics()
-      const percentChange = lastPrice === 0 ? 0 : ((newPrice - lastPrice) / lastPrice) * 100
-      
-      results.push({
-        step: i + 1,
-        token: 'ETH',
-        oldPrice: lastPrice,
-        newPrice: newPrice,
-        healthFactor: Number(metrics.healthFactor) / 100,
-        timestamp: Math.floor(Date.now() / 1000),
-        percentChange: percentChange
-      })
+      // Generate volatility between -volatilityPercent and +volatilityPercent
+      const ethVolatility = (Math.random() * 2 - 1) * volatilityPercent / 100
+      const btcVolatility = (Math.random() * 2 - 1) * volatilityPercent / 100
 
-      lastPrice = newPrice
+      // Ensure prices stay positive by using Math.max
+      const newPrices = {
+        eth: Math.max(lastPrices.eth * (1 + ethVolatility), 0.01), // Minimum price of 0.01
+        btc: Math.max(lastPrices.btc * (1 + btcVolatility * 1.2), 0.01)
+      }
+      
+      // Convert to BigInt safely ensuring no negative numbers
+      const ethPriceBigInt = BigInt(Math.floor(Math.max(newPrices.eth * 1e8, 0)))
+      const btcPriceBigInt = BigInt(Math.floor(Math.max(newPrices.btc * 1e8, 0)))
+      
+      // Update prices sequentially with safe values
+      await this.updateOraclePrice(tokens.eth, ethPriceBigInt)
+      await new Promise(r => setTimeout(r, 1000))
+      await this.updateOraclePrice(tokens.btc, btcPriceBigInt)
+      await new Promise(r => setTimeout(r, 1000))
+      
+      const metrics = await this.getSolvencyMetrics()
+      
+      // Calculate percentage changes safely
+      const ethPercentChange = ((newPrices.eth - lastPrices.eth) / lastPrices.eth) * 100
+      const btcPercentChange = ((newPrices.btc - lastPrices.btc) / lastPrices.btc) * 100
+      
+      results.push(
+        {
+          step: i + 1,
+          token: 'ETH',
+          oldPrice: lastPrices.eth,
+          newPrice: newPrices.eth,
+          healthFactor: Number(metrics.healthFactor) / 100,
+          timestamp: Math.floor(Date.now() / 1000),
+          percentChange: ethPercentChange
+        },
+        {
+          step: i + 1,
+          token: 'BTC',
+          oldPrice: lastPrices.btc,
+          newPrice: newPrices.btc,
+          healthFactor: Number(metrics.healthFactor) / 100,
+          timestamp: Math.floor(Date.now() / 1000),
+          percentChange: btcPercentChange
+        }
+      )
+
+      lastPrices = newPrices
       await new Promise(r => setTimeout(r, 1000))
     }
 
@@ -358,8 +403,11 @@ export class SolvencyProofService {
     }
 
     try {
-      // 1. Update price in oracle
-      await this.write(this.priceOracle, 'setPrice', [token, price])
+      // Ensure price is positive and within safe bounds
+      const safePrice = price < 0n ? 0n : price
+      
+      // 1. Update price in oracle with safe value
+      await this.write(this.priceOracle, 'setPrice', [token, safePrice])
 
       // 2. Get current state
       const [currentAssets, currentLiabilities] = await Promise.all([
@@ -383,14 +431,14 @@ export class SolvencyProofService {
           tokens: currentAssets.tokens,
           amounts: currentAssets.amounts,
           values: currentAssets.values.map((value: bigint, i: number) => 
-            i === tokenIndex ? (currentAssets.amounts[i] * price) / (10n ** 8n) : value
+            i === tokenIndex ? (currentAssets.amounts[i] * safePrice) / (10n ** 8n) : value
           )
         },
         {
           tokens: currentLiabilities.tokens,
           amounts: currentLiabilities.amounts,
           values: currentLiabilities.values.map((value: bigint, i: number) =>
-            i === tokenIndex ? (currentLiabilities.amounts[i] * price) / (10n ** 8n) : value
+            i === tokenIndex ? (currentLiabilities.amounts[i] * safePrice) / (10n ** 8n) : value
           )
         }
       )

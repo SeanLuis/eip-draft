@@ -81,8 +81,9 @@
           <div class="border rounded-lg p-4">
             <h3 class="font-semibold mb-2">Volatility Test</h3>
             <p class="text-sm text-gray-600 mb-4">
-              Tests price fluctuations:
-              <br>- ±{{ settings.simulation.volatility }}% price swings
+              Tests price fluctuations for ETH and BTC:
+              <br>- ±{{ settings.simulation.volatility }}% random price swings
+              <br>- Different volatility patterns for each asset
               <br>- 5 price points over {{ settings.simulation.duration }}h
             </p>
             <div class="space-y-3">
@@ -386,35 +387,22 @@ const simulateMarketCrash = async () => {
 async function simulateVolatility() {
   if (!solvencyService.value) return
   isLoading.value = true
-  updateProgress.value.message = 'Simulating volatility...'
+  updateProgress.value.message = 'Simulating market volatility...'
   
   try {
-    // Get initial state
-    const token = TOKEN_LIST.WETH.address as `0x${string}`
-    const baseAmount = ethers.parseEther("1000") // 1000 ETH
     const volatility = settings.value.simulation.volatility
     const steps = 5
 
-    // Run simulation
     const results = await solvencyService.value.simulateVolatility(
-      token,
-      baseAmount,
       volatility,
       steps
     )
 
-    // Update test results
     testResults.value = {
       testName: 'Volatility Test',
       healthFactor: results[results.length - 1].healthFactor * 100,
       isSolvent: true,
-      priceChanges: results.map(r => ({
-        step: r.step,
-        token: 'ETH',
-        oldPrice: r.oldPrice,
-        newPrice: r.newPrice,
-        percentChange: r.percentChange
-      }))
+      priceChanges: results
     }
 
     console.log('Volatility test results:', testResults.value)
