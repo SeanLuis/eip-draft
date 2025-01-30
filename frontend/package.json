@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",
-    "@heroicons/vue": "^2.1.1",
+    "@heroicons/vue": "^2.2.0",
     "@vueuse/core": "^10.7.2",
     "chart.js": "^4.4.1",
     "ethers": "^6.10.0",
@@ -26,10 +26,10 @@
     "wagmi": "^2.5.7"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.10",
     "@types/node": "^20.11.5",
     "@typescript-eslint/eslint-plugin": "^6.19.1",
     "@typescript-eslint/parser": "^6.19.1",
-    "@tailwindcss/typography": "^0.5.10",
     "@vitejs/plugin-vue": "^5.0.3",
     "autoprefixer": "^10.4.17",
     "eslint": "^8.56.0",
