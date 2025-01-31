@@ -2,8 +2,8 @@
 title: DeFi Protocol Solvency Proof Standard
 description: A standardized interface for verifying and reporting DeFi protocol solvency status through smart contracts
 author: Sean Luis Guada Rodríguez (@SeanLuis) <seanluis47@gmail.com>
-discussions-to: https://ethereum-magicians.org/t/eip-draft-defi-protocol-solvency-proof-standard
-status: Draft
+discussions-to: TBD
+status: Draft - Pending Discussion Thread
 type: Standards Track
 category: Interface
 created: 2025-01-30
