@@ -176,7 +176,20 @@ The standard implements a multi-tiered risk assessment system:
        R -->|"SR < 105%"| C[Critical]
    ```
 
-### Oracle Integration
+### Oracle Integration (Optional)
+
+This standard intentionally leaves oracle implementation flexible. Protocols MAY implement price feeds in various ways:
+
+1. Direct Integration
+   - Using existing oracle networks (Chainlink, API3, etc.)
+   - Custom price feed implementations
+   - Internal price calculations
+
+2. Aggregation Strategies
+   - Multiple oracle sources
+   - TWAP implementations
+   - Medianized price feeds
+
 
 ```mermaid
 flowchart LR
