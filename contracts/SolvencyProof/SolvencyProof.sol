@@ -225,7 +225,7 @@ contract SolvencyProof is ISolvencyProof, Ownable, ReentrancyGuard {
             liabilities: currentLiabilities
         }));
 
-        // Actualizar alertas basadas en el ratio real
+        // Update alerts based on actual ratio
         if (ratio < CRITICAL_RATIO) {
             emit RiskAlert("CRITICAL", ratio, totalAssets, totalLiabilities);
         } else if (ratio < MIN_SOLVENCY_RATIO) {

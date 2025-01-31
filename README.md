@@ -132,7 +132,7 @@ Where:
 
 ### Risk Thresholds
 
-Los siguientes umbrales han sido validados a través de pruebas extensivas:
+The following thresholds have been validated through extensive testing:
 
 | Risk Level | Ratio Range | Action Required | Validation Status |
 |------------|-------------|-----------------|-------------------|
@@ -141,11 +141,11 @@ Los siguientes umbrales han sido validados a través de pruebas extensivas:
 | WARNING    | 110% - 120% | Monitor        | ✅ Validated |
 | HEALTHY    | ≥ 120%      | Normal         | ✅ Validated |
 
-Las pruebas han confirmado que:
-1. El sistema maneja correctamente caídas de mercado del 50%
-2. Los ratios se calculan con precisión en todos los escenarios
-3. Las actualizaciones de estado mantienen la consistencia
-4. Los límites de ratio son efectivos para la detección temprana
+Testing has confirmed that:
+1. The system correctly handles 50% market drops
+2. Ratios are calculated accurately in all scenarios
+3. State updates maintain consistency
+4. Ratio limits are effective for early detection
 
 ```mermaid
 stateDiagram-v2
@@ -229,14 +229,14 @@ The core standard focuses on solvency verification, leaving oracle management im
 
 ### Implementation Notes
 
-Basado en las pruebas realizadas, se recomienda:
+Based on conducted tests, it is recommended:
 
-1. Manejo de Liabilities:
-   - Mantener liabilities constantes durante actualizaciones de precio
-   - Validar que liabilities nunca sean 0 para evitar divisiones por cero
-   - Actualizar liabilities solo cuando cambien las posiciones reales
+1. Liability Management:
+   - Maintain constant liabilities during price updates
+   - Validate that liabilities are never 0 to avoid division by zero
+   - Update liabilities only when actual positions change
 
-2. Cálculo de Ratios:
+2. Ratio Calculation:
    ```solidity
    function calculateRatio(uint256 assets, uint256 liabilities) pure returns (uint256) {
        if (liabilities == 0) {
@@ -246,15 +246,15 @@ Basado en las pruebas realizadas, se recomienda:
    }
    ```
 
-3. Validación de Estado:
-   - Verificar valores antes de actualizar
-   - Mantener histórico preciso
-   - Emitir eventos para cambios significativos
+3. State Validation:
+   - Verify values before updating
+   - Maintain accurate history
+   - Emit events for significant changes
 
-4. Consideraciones de Gas:
-   - Optimizar almacenamiento de histórico
-   - Batch updates para múltiples tokens
-   - Limitar tamaño de arrays en actualizaciones
+4. Gas Considerations:
+   - Optimize history storage
+   - Batch updates for multiple tokens
+   - Limit array sizes in updates
 
 ## Rationale
 
