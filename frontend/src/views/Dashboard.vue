@@ -4,7 +4,7 @@
     <div class="mb-8 flex justify-between items-center">
       <h1 class="text-2xl font-semibold text-gray-900">Protocol Health Monitor</h1>
       <button @click="refreshData"
-        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+        class="inline-flex items-center px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-md hover:bg-gray-700 transition-colors"
         :disabled="isLoading">
         <svg v-if="isLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg"
           fill="none" viewBox="0 0 24 24">
