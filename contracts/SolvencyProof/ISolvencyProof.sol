@@ -2,57 +2,46 @@
 pragma solidity ^0.8.20;
 
 /**
- * @title ISolvencyProof - Standard Interface for DeFi Protocol Solvency
- * @dev Defines core functionality for verifying and tracking protocol solvency
+ * @title ISolvencyProof
+ * @author Sean Luis (@SeanLuis) <seanluis47@gmail.com>
+ * @notice Standard Interface for DeFi Protocol Solvency (EIP-DRAFT)
+ * @dev Interface for the DeFi Protocol Solvency Proof Standard
+ * @custom:security-contact seanluis47@gmail.com
+ * @custom:version 1.0.0
  */
 interface ISolvencyProof {
     /**
      * @dev Protocol assets structure
      * @notice Represents the current state of protocol assets
-     * 
-     * @param tokens Array of token addresses managed by the protocol
-     * @param amounts Array of token amounts held by the protocol
-     * @param values Array of token values in ETH denomination
-     * @param timestamp Last update timestamp
-     * 
-     * Requirements:
-     * - All arrays must have the same length
-     * - Values must be denominated in ETH with 18 decimals
+     * @custom:validation All arrays must be equal length
+     * @custom:validation Values must be in ETH with 18 decimals
      */
     struct ProtocolAssets {
-        address[] tokens;
-        uint256[] amounts;
-        uint256[] values;
-        uint256 timestamp;
+        address[] tokens;    // Addresses of tracked tokens
+        uint256[] amounts;   // Amount of each token
+        uint256[] values;    // Value in ETH of each token amount
+        uint256 timestamp;   // Last update timestamp
     }
 
     /**
      * @dev Protocol liabilities structure
      * @notice Represents the current state of protocol liabilities
-     * 
-     * @param tokens Array of token addresses that the protocol owes
-     * @param amounts Array of token amounts owed
-     * @param values Array of liability values in ETH denomination
-     * @param timestamp Last update timestamp
-     * 
-     * Requirements:
-     * - All arrays must have the same length
-     * - Values must be denominated in ETH with 18 decimals
+     * @custom:validation All arrays must be equal length
+     * @custom:validation Values must be in ETH with 18 decimals
      */
     struct ProtocolLiabilities {
-        address[] tokens;
-        uint256[] amounts;
-        uint256[] values;
-        uint256 timestamp;
+        address[] tokens;    // Addresses of liability tokens
+        uint256[] amounts;   // Amount of each liability
+        uint256[] values;    // Value in ETH of each liability
+        uint256 timestamp;   // Last update timestamp
     }
 
     /**
-     * @dev Emitted when solvency metrics are updated
-     * @notice Provides real-time updates of protocol's financial health
-     * 
-     * @param totalAssets Sum of all asset values in ETH
-     * @param totalLiabilities Sum of all liability values in ETH
-     * @param healthFactor Health factor calculated as totalAssets / totalLiabilities
+     * @dev Emitted on metrics update
+     * @notice Real-time financial health update
+     * @param totalAssets Sum of asset values in ETH
+     * @param totalLiabilities Sum of liability values in ETH
+     * @param healthFactor Calculated as (totalAssets/totalLiabilities) × 10000
      * @param timestamp Update timestamp
      */
     event SolvencyMetricsUpdated(
