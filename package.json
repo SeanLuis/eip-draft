@@ -7,7 +7,8 @@
     "test": "hardhat test",
     "coverage": "hardhat coverage",
     "node": "hardhat node",
-    "deploy:local": "hardhat run scripts/deploy.ts --network localhost"
+    "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
+    "copy:abis": "mkdir -p frontend/src/abis && find artifacts/contracts -name '*.json' ! -name '*.dbg.json' -exec cp {} frontend/src/abis/ \\;"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.2.0"
