@@ -1,35 +1,33 @@
 ---
 eip: XXXX
-title: DeFi Protocol Solvency Proof Standard
-description: A standardized interface for implementing and verifying solvency proofs in DeFi protocols
-author: [Author Name]
+title: DeFi Protocol Solvency Proof
+description: A standardized interface for verifying and reporting DeFi protocol solvency
+author: Isabelly Fernanda Dias Flores (@Isabelly) 
 discussions-to: https://ethereum-magicians.org/t/eip-xxxx-solvency-proofs
 status: Draft
 type: Standards Track
 category: ERC
-created: 2025-01-27
+created: 2024-01-27
 requires: 20
 ---
 
 ## Abstract
 
-This EIP introduces a standardized interface for DeFi protocols to implement verifiable solvency proofs. It defines methods for reporting assets, liabilities, and financial health metrics, enabling real-time, transparent verification of protocols' financial state through smart contracts. The standard provides a comprehensive framework for monitoring and maintaining the financial health of DeFi protocols while ensuring transparency and trust in the ecosystem.
+A standardized interface that enables DeFi protocols to implement verifiable solvency proofs through smart contracts. The standard defines methods for reporting assets, liabilities, and financial metrics, enabling real-time verification of protocol solvency.
 
 ## Motivation
 
-Financial transparency has become a critical concern in the DeFi ecosystem, particularly following recent protocol failures and market instability. Current implementations face several challenges:
-
 The DeFi ecosystem currently lacks standardization in financial health reporting, leading to:
 
-1. Inconsistent reporting methodologies across protocols, making comparisons difficult
+1. Inconsistent reporting methodologies across protocols
 2. Limited transparency in real-time financial status
 3. Absence of standardized early warning systems
 4. Complex and time-consuming audit processes
 5. Difficulty in assessing cross-protocol risks
 
-This standard addresses these challenges by providing a unified framework for solvency verification.
-
 ## Specification
+
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119 and RFC 8174.
 
 ```mermaid
 flowchart TB
@@ -289,137 +287,33 @@ Basado en las pruebas realizadas, se recomienda:
 
 ## Rationale
 
-The design decisions in this standard prioritize:
+The standard's design prioritizes:
 
-1. Reliability: Multiple oracle support and robust calculation methods ensure accurate valuations.
-
-2. Efficiency: Optimized data structures and calculation methods minimize gas costs while maintaining accuracy.
-
-3. Flexibility: The modular design allows protocols to implement custom risk parameters while maintaining standardization.
-
-4. Transparency: Clear reporting mechanisms and standardized metrics enable easy verification.
+1. Reliability through multiple oracle support and robust calculations
+2. Efficiency via optimized data structures
+3. Flexibility through modular design
+4. Transparency via standardized metrics
 
 ## Backwards Compatibility
 
-This EIP is compatible with existing DeFi protocols and can be implemented alongside current financial management systems. It requires no changes to existing token standards and can be deployed as a complementary system to existing protocols.
+This EIP is compatible with existing DeFi protocols and requires no changes to existing token standards.
+
+## Test Cases
+
+Test cases are provided in the reference implementation demonstrating:
+
+1. Solvency ratio calculations
+2. Risk threshold monitoring
+3. Oracle integration
+4. Historical data tracking
 
 ## Reference Implementation
 
-The following reference implementation demonstrates the complete functionality of the standard:
-
-```solidity
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
-
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-
-/**
- * @title SolvencyProof
- * @dev Reference implementation of the solvency proof standard
- *
- * This implementation includes:
- * - Asset and liability management
- * - Solvency ratio calculations
- * - Risk alert system
- * - Oracle integration
- * - Metrics history
- */
-contract SolvencyProof is ISolvencyProof, Ownable, ReentrancyGuard {
-  // === Constants ===
-  uint256 private constant RATIO_DECIMALS = 10000;        // Base for ratio calculations (100%)
-  uint256 private constant MIN_SOLVENCY_RATIO = 10500;    // Minimum solvency ratio (105%)
-  uint256 private constant CRITICAL_RATIO = 10200;        // Critical ratio (102%)
-
-  // === State Variables ===
-  ProtocolAssets private currentAssets;
-  ProtocolLiabilities private currentLiabilities;
-  mapping(address => bool) public assetOracles;           // Authorized oracles
-  
-  struct HistoricalMetric {
-    uint256 timestamp;
-    uint256 solvencyRatio;
-  }
-  HistoricalMetric[] private metricsHistory;
-
-  // === Events ===
-  event OracleUpdated(address oracle, bool authorized);
-  
-  /**
-   * @dev Constructor
-   * Initializes contract with deployer as owner
-   */
-  constructor() Ownable(msg.sender) {}
-
-  // === Modifier ===
-  modifier onlyOracle() {
-    require(assetOracles[msg.sender], "Not authorized oracle");
-    _;
-  }
-
-  // === External Functions ===
-
-  /**
-   * @dev Updates protocol assets
-   * @param tokens Array of token addresses
-   * @param amounts Array of amounts
-   * @param values Array of ETH values
-   * 
-   * Requirements:
-   * - Caller must be authorized oracle
-   * - Arrays must have same length
-   * 
-   * Emits {SolvencyMetricsUpdated}
-   * May emit {RiskAlert}
-   */
-  function updateAssets(
-    address[] calldata tokens,
-    uint256[] calldata amounts,
-    uint256[] calldata values
-  ) external onlyOracle nonReentrant {
-    require(tokens.length == amounts.length && 
-        amounts.length == values.length, 
-        "Array lengths mismatch");
-
-    currentAssets = ProtocolAssets({
-      tokens: tokens,
-      amounts: amounts,
-      values: values,
-      timestamp: block.timestamp
-    });
-
-    _updateMetrics();
-  }
-
-  // === View Functions ===
-
-  /**
-   * @dev Calculates current solvency ratio
-   * @return ratio Solvency ratio in RATIO_DECIMALS base
-   * 
-   * Formula: SR = (Total Assets / Total Liabilities) * RATIO_DECIMALS
-   */
-  function getSolvencyRatio() external view returns (uint256) {
-    return _calculateSolvencyRatio();
-  }
-
-  // === Internal Functions ===
-
-  /**
-   * @dev Calculates solvency ratio
-   * @return ratio Solvency ratio
-   */
-  function _calculateSolvencyRatio() internal view returns (uint256) {
-    uint256 totalAssets = _sumArray(currentAssets.values);
-    uint256 totalLiabilities = _sumArray(currentLiabilities.values);
-
-    if (totalLiabilities == 0) return type(uint256).max;
-    return (totalAssets * RATIO_DECIMALS) / totalLiabilities;
-  }
-}
-```
+A reference implementation is provided in [SolvencyProof.sol](contracts/SolvencyProof/SolvencyProof.sol).
 
 ## Security Considerations
+
+Key security considerations include:
 
 1. Oracle Security:
    - Multiple price feed sources
@@ -429,25 +323,11 @@ contract SolvencyProof is ISolvencyProof, Ownable, ReentrancyGuard {
 2. Access Control:
    - Authorized updaters
    - Rate limiting
-   - Emergency controls
 
 3. Risk Management:
    - Threshold calibration
    - Alert system reliability
-   - Historical data integrity
-
-Añadir basado en las pruebas:
-
-1. Protección contra Manipulación:
-   - Validar que los ratios no excedan límites razonables (ej: 500%)
-   - Verificar que los precios sean realistas
-   - Asegurar que las actualizaciones sean atómicas
-
-2. Manejo de Casos Edge:
-   - Assets o liabilities en 0
-   - Cambios extremos de precio
-   - Fallos en oráculos
 
 ## Copyright
 
-Copyright and related rights waived via [CC0](https://creativecommons.org/publicdomain/zero/1.0/)
+Copyright and related rights waived via [CC0](../LICENSE.md).
