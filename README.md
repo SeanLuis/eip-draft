@@ -70,34 +70,6 @@ The standard defines a comprehensive interface for solvency verification. Key fe
 
 For the complete interface specification, see [ISolvencyProof.sol](contracts/SolvencyProof/ISolvencyProof.sol).
 
-### Oracle Management
-
-The standard includes a robust oracle management system:
-
-1. **Authorization System**
-   ```solidity
-   function setOracle(address oracle, bool authorized) external;
-   event OracleUpdated(address indexed oracle, bool authorized);
-   ```
-
-   This system:
-   - Allows flexible oracle management
-   - Supports multiple price sources
-   - Enables oracle rotation
-   - Provides authorization tracking
-
-2. **Oracle Requirements**
-   - Must provide accurate price feeds
-   - Must update values regularly
-   - Must handle asset/liability updates
-   - Must respect gas optimization
-
-3. **Security Considerations**
-   - Only owner can manage oracles
-   - Zero address checks
-   - Authorization tracking
-   - Event emission for transparency
-
 ### Mathematical Model
 
 The solvency verification system is based on comprehensive mathematical models:
