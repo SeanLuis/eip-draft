@@ -10,12 +10,17 @@ import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signer
 import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 
-// Constants for price simulation
+/**
+ * Constants for price simulation in USD terms
+ * Prices are stored with 8 decimal places
+ */
 const PRICE_DECIMALS = 8n;
-const INITIAL_ETH_PRICE = 2000n * (10n ** PRICE_DECIMALS); // $2000
-const INITIAL_BTC_PRICE = 35000n * (10n ** PRICE_DECIMALS); // $35000
+const INITIAL_ETH_PRICE = 2000n * (10n ** PRICE_DECIMALS); // $2000 USD
+const INITIAL_BTC_PRICE = 35000n * (10n ** PRICE_DECIMALS); // $35000 USD
 
-// Types for test data
+/**
+ * Represents a single entry in the price history tracking
+ */
 interface PriceHistoryEntry {
     step: number;
     ethPrice: bigint;
@@ -24,6 +29,9 @@ interface PriceHistoryEntry {
     ratio?: bigint;
 }
 
+/**
+ * Summary data structure for test reporting
+ */
 interface TestSummaryData {
     metrics?: {
         start: number;
@@ -38,7 +46,9 @@ interface TestSummaryData {
     };
 }
 
-// Test context interface
+/**
+ * Test context containing all deployed contracts and accounts
+ */
 interface TestContext {
     solvencyProof: SolvencyProof;
     mockPriceOracle: MockPriceOracle;
@@ -55,6 +65,11 @@ interface TestContext {
     users: HardhatEthersSigner[];
 }
 
+/**
+ * Prints formatted test summary data to console
+ * @param title - Title of the test summary
+ * @param data - Test summary data to display
+ */
 function printTestSummary(title: string, data: TestSummaryData): void {
     console.log('\n' + '='.repeat(50));
     console.log(`Test Summary: ${title}`);
@@ -90,7 +105,6 @@ function printTestSummary(title: string, data: TestSummaryData): void {
 }
 
 describe("SolvencyProof Real World Scenarios", function () {
-    // Declare variables at the top level so they're accessible in helper functions
     let context: TestContext;
 
     async function deployContractsFixture(): Promise<TestContext> {
@@ -185,28 +199,30 @@ describe("SolvencyProof Real World Scenarios", function () {
 
     describe("Market Crash Scenario", function() {
         it("Should handle rapid price movements and maintain solvency tracking", async function() {
-            // Setup inicial
+            // Initial setup - establish baseline protocol state
             await setupInitialProtocolState(context);
             let [isSolvent, healthFactor] = await context.solvencyProof.verifySolvency();
             let ratio = await context.solvencyProof.getSolvencyRatio();
             
-            console.log("Initial state:", {
+            // Log initial state metrics
+            console.log("Initial Protocol State:", {
                 isSolvent,
                 healthFactor: Number(healthFactor) / 100,
                 ratio: Number(ratio) / 100
             });
             
+            // Verify initial solvency conditions
             expect(isSolvent).to.be.true;
-            expect(healthFactor).to.be.gt(12000n); // >120%
+            expect(healthFactor).to.be.gt(12000n); // Minimum 120% health factor
 
-            // Simular crash
-            const crashPriceETH = INITIAL_ETH_PRICE * 20n / 100n; // 80% drop
-            const crashPriceBTC = INITIAL_BTC_PRICE * 30n / 100n; // 70% drop
+            // Simulate market crash - 80% ETH drop, 70% BTC drop
+            const crashPriceETH = INITIAL_ETH_PRICE * 20n / 100n;
+            const crashPriceBTC = INITIAL_BTC_PRICE * 30n / 100n;
 
             await context.mockPriceOracle.setPrice(await context.weth.getAddress(), crashPriceETH);
             await context.mockPriceOracle.setPrice(await context.wbtc.getAddress(), crashPriceBTC);
 
-            // Actualizar estado después del crash
+            // Update protocol state with crash prices
             const tokens = [
                 await context.weth.getAddress(),
                 await context.wbtc.getAddress()
@@ -222,26 +238,27 @@ describe("SolvencyProof Real World Scenarios", function () {
                 (amounts[1] * crashPriceBTC) / (10n ** 8n)
             ];
 
-            // Mantener los mismos liabilities pero actualizar assets
+            // Update assets while maintaining existing liabilities
             await context.solvencyProof.connect(context.oracle).updateAssets(
                 tokens,
                 amounts,
                 values
             );
 
-            // Verificar estado post-crash
+            // Verify post-crash solvency state
             [isSolvent, healthFactor] = await context.solvencyProof.verifySolvency();
             ratio = await context.solvencyProof.getSolvencyRatio();
 
-            console.log("Post-crash state:", {
+            // Log post-crash metrics
+            console.log("Post-crash Protocol State:", {
                 isSolvent,
                 healthFactor: Number(healthFactor) / 100,
                 ratio: Number(ratio) / 100
             });
 
-            // Verificar que el estado es crítico
+            // Assert critical state conditions
             expect(isSolvent).to.be.false;
-            expect(healthFactor).to.be.lt(10500n); // <105%
+            expect(healthFactor).to.be.lt(10500n); // Below 105% threshold
         });
 
         it("Should track historical metrics during volatility", async function() {
@@ -347,7 +364,7 @@ describe("SolvencyProof Real World Scenarios", function () {
                 if (i === 0) return false;
                 return Math.abs(Number(entry.ratio) - Number(combinedHistory[i-1].ratio)) > 100; // 1% change
             });
-            // Corregir la sintaxis del expect - remover la coma
+            
             expect(volatilityDetected, "Should detect price volatility in ratios").to.be.true;
         });
     });
@@ -425,7 +442,14 @@ describe("SolvencyProof Real World Scenarios", function () {
         });
     });
 
-    // Helper functions
+    /**
+     * Helper Functions
+     */
+
+    /**
+     * Sets up initial protocol state with balanced assets and liabilities
+     * @param ctx - Test context containing contract instances
+     */
     async function setupInitialProtocolState(ctx: TestContext): Promise<void> {
         const { solvencyProof, weth, wbtc, usdc, oracle, mockPriceOracle } = ctx;
         
@@ -461,6 +485,10 @@ describe("SolvencyProof Real World Scenarios", function () {
         );
     }
 
+    /**
+     * Simulates a market crash by drastically reducing asset prices
+     * @param ctx - Test context containing contract instances
+     */
     async function simulateMarketCrash(ctx: TestContext): Promise<void> {
         const { mockPriceOracle, weth, wbtc, usdcEthLp, protocolToken } = ctx;
         
@@ -476,6 +504,11 @@ describe("SolvencyProof Real World Scenarios", function () {
         await mockPriceOracle.setPrice(await protocolToken.getAddress(), 1n * (10n ** PRICE_DECIMALS));
     }
 
+    /**
+     * Simulates market volatility using sinusoidal price movements
+     * @param ctx - Test context containing contract instances
+     * @param step - Current step in the simulation sequence
+     */
     async function simulateMarketVolatility(
         ctx: TestContext, 
         step: number
@@ -504,6 +537,11 @@ describe("SolvencyProof Real World Scenarios", function () {
         );
     }
 
+    /**
+     * Updates protocol metrics with current market conditions
+     * @param ctx - Test context containing contract instances
+     * @returns Transaction response from the update operation
+     */
     async function updateProtocolMetrics(
         ctx: TestContext
     ): Promise<ContractTransactionResponse> {
