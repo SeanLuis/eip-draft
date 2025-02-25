@@ -1,13 +1,13 @@
 ---
-title: DeFi Protocol Solvency Proof Standard
+eip: XXXX
+title: DeFi Protocol Solvency Proof Mechanism
 description: A standardized interface for verifying and reporting DeFi protocol solvency status through smart contracts
 author: Sean Luis Guada Rodríguez (@SeanLuis) <seanluis47@gmail.com>
-discussions-to: TBD
-status: Draft - Pending Discussion Thread
+status: Draft
 type: Standards Track
-category: Interface
+category: ERC
 created: 2025-01-30
-requires: 20, 165
+requires: [20, 165]
 ---
 
 ## Abstract
