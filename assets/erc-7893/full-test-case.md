@@ -39,12 +39,7 @@ Test coverage for the SolvencyProof smart contract system, focusing on market sc
 
 ### Initial State vs Final State
 
-```mermaid
-flowchart LR
-    A["Initial State<br>SR: 200%<br>ETH: $2000<br>BTC: $35000"] 
-    -->|"Market Crash"| B["Final State<br>SR: 0.03%<br>ETH: $1840<br>BTC: $32200"]
-    B -->|"Health Factor < 105%"| C["Emergency Stop"]
-```
+![Versus](./svg/versus.svg)
 
 ### Solvency Metrics During Crash
 
@@ -58,27 +53,11 @@ flowchart LR
 
 ### Test Case: Price Movement Tracking
 **Steps Executed**:
-```mermaid
-graph TD
-    A[Step 0: Initialize] -->|+8.41%| B[Step 1: First Swing]
-    B -->|+9.09%| C[Step 2: Peak]
-    C -->|+1.41%| D[Step 3: Stabilization]
-    D -->|-7.57%| E[Step 4: Decline]
-```
+![price-movement-tracking](./svg/price-movement-tracking-steps.svg)
 
 ### Price Movement Tracking
 
-```mermaid
-graph LR
-    subgraph PriceEvolution["Price Evolution Over Time"]
-        direction LR
-        S0["Step 0<br>$2000/$35000"] --> 
-        S1["Step 1<br>$2160/$37800"] --> 
-        S2["Step 2<br>$2180/$38150"] --> 
-        S3["Step 3<br>$2020/$35350"] --> 
-        S4["Step 4<br>$1840/$32200"]
-    end
-```
+![price-movement-tracking](./svg/price-movement-tracking.svg)
 
 ### Price Evolution Summary
 | Step | ETH Price | BTC Price | Change % | Health Status |
@@ -101,14 +80,7 @@ graph LR
 
 ### Volatility Measurements
 
-```mermaid
-flowchart LR
-    S0["Low<br>0%"] --> 
-    S1["Medium<br>8.41%"] --> 
-    S2["High<br>9.09%"] -->
-    S3["Low<br>1.41%"] -->
-    S4["Negative<br>-7.57%"]
-```
+![volatility-measurements](./svg/volatility-measurements.svg)
 
 ## Volatility Analysis Implementation
 
@@ -176,15 +148,8 @@ flowchart LR
 ## System Health Monitoring
 
 ### Performance Metrics
-```mermaid
-graph LR
-    A[Test Execution] --> B[Gas Usage]
-    A --> C[Response Time]
-    A --> D[State Updates]
-    B --> E[Optimization Level: High]
-    C --> F[Avg Time: <2s]
-    D --> G[Success Rate: 100%]
-```
+
+![performance-metrics](./svg/performance-metrics.svg)
 
 ## Risk Threshold Breaches
 
@@ -196,17 +161,7 @@ graph LR
 
 ### System Response Timeline
 
-```mermaid
-gantt
-    title System Response to Market Events
-    dateFormat YYYY-MM-DD
-    section Price Monitoring
-    Initial State    :2025-01-28, 1h
-    Price Increase   :1h
-    Peak Prices      :1h
-    Initial Decline  :1h
-    Critical Drop    :1h
-```
+![system-response-timeline](./svg/system-response-timeline.svg)
 
 ## Test Coverage Summary
 
