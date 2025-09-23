@@ -6,7 +6,7 @@ import {
     MockMultiOracle,
     MaliciousOracle,
     MockToken
-} from "../typechain-types";
+} from "@/typechain-types";
 
 /**
  * Security Features Test Suite for ERC-7893 Solvency Proof Standard
@@ -391,46 +391,102 @@ describe("ERC-7893 Security Features & User Protection", function () {
             console.log("\n🛡️  ERC-7893 SECURITY FEATURES SUMMARY");
             console.log("=====================================");
             
-            // 1. Access Control
+            // Collect all security parameters
+            const [
+                maxPriceDeviation,
+                maxTokensPerUpdate,
+                stalenessThreshold,
+                circuitBreakerThreshold,
+                updateCooldown
+            ] = await solvencyProof.getSecurityParameters();
+            
             const oracleRole = await solvencyProof.ORACLE_ROLE();
             const hasRole = await solvencyProof.hasRole(oracleRole, oracle1.address);
-            expect(hasRole).to.be.true;
-            console.log("✅ Role-based Access Control: ACTIVE");
-            
-            // 2. Rate Limiting
-            const [,,,,updateCooldown] = await solvencyProof.getSecurityParameters();
-            expect(updateCooldown).to.equal(5);
-            console.log("✅ Rate Limiting (5 blocks): ACTIVE");
-            
-            // 3. DoS Protection
-            const [,maxTokens,,,] = await solvencyProof.getSecurityParameters();
-            expect(maxTokens).to.equal(50);
-            console.log("✅ DoS Protection (50 token limit): ACTIVE");
-            
-            // 4. Circuit Breaker
-            const [,,,circuitThreshold,] = await solvencyProof.getSecurityParameters();
-            expect(circuitThreshold).to.equal(2000);
-            console.log("✅ Circuit Breaker (20% threshold): ACTIVE");
-            
-            // 5. Emergency Controls
             const [,,guardianAddr] = await solvencyProof.getEmergencyStatus();
-            expect(guardianAddr).to.equal(guardian.address);
-            console.log("✅ Emergency Controls: ACTIVE");
             
-            // 6. Oracle Staleness Detection
-            const [,,stalenessThreshold,,] = await solvencyProof.getSecurityParameters();
-            expect(stalenessThreshold).to.equal(3600);
-            console.log("✅ Oracle Staleness Detection (1 hour): ACTIVE");
-            
-            // 7. Historical Data Bounds
+            // Test historical data functionality
             await solvencyProof.connect(oracle1).updateAssets(
                 [weth.target],
                 [ethers.parseEther("100")],
                 [ethers.parseEther("100")]
             );
             const history = await solvencyProof.getSolvencyHistory(0, await time.latest());
+            
+            // Create security features table
+            const securityFeatures = [
+                {
+                    'Feature': 'Access Control',
+                    'Status': hasRole ? '✅ ACTIVE' : '❌ INACTIVE',
+                    'Configuration': `Oracle Role: ${hasRole}`,
+                    'Protection': 'Unauthorized access'
+                },
+                {
+                    'Feature': 'Rate Limiting',
+                    'Status': updateCooldown > 0 ? '✅ ACTIVE' : '❌ INACTIVE',
+                    'Configuration': `${updateCooldown} blocks cooldown`,
+                    'Protection': 'Spam/DoS attacks'
+                },
+                {
+                    'Feature': 'DoS Protection',
+                    'Status': maxTokensPerUpdate > 0 ? '✅ ACTIVE' : '❌ INACTIVE',
+                    'Configuration': `${maxTokensPerUpdate} token limit`,
+                    'Protection': 'Resource exhaustion'
+                },
+                {
+                    'Feature': 'Circuit Breaker',
+                    'Status': circuitBreakerThreshold > 0 ? '✅ ACTIVE' : '❌ INACTIVE',
+                    'Configuration': `${Number(circuitBreakerThreshold)/100}% threshold`,
+                    'Protection': 'Market manipulation'
+                },
+                {
+                    'Feature': 'Emergency Controls',
+                    'Status': guardianAddr !== ethers.ZeroAddress ? '✅ ACTIVE' : '❌ INACTIVE',
+                    'Configuration': `Guardian: ${guardianAddr.slice(0,8)}...`,
+                    'Protection': 'Critical situations'
+                },
+                {
+                    'Feature': 'Oracle Staleness',
+                    'Status': stalenessThreshold > 0 ? '✅ ACTIVE' : '❌ INACTIVE',
+                    'Configuration': `${stalenessThreshold}s threshold`,
+                    'Protection': 'Stale data usage'
+                },
+                {
+                    'Feature': 'Price Validation',
+                    'Status': maxPriceDeviation > 0 ? '✅ ACTIVE' : '❌ INACTIVE',
+                    'Configuration': `${Number(maxPriceDeviation)/100}% max deviation`,
+                    'Protection': 'Price manipulation'
+                },
+                {
+                    'Feature': 'Historical Data',
+                    'Status': history.timestamps.length > 0 ? '✅ ACTIVE' : '❌ INACTIVE',
+                    'Configuration': `${history.timestamps.length} records stored`,
+                    'Protection': 'Unbounded growth'
+                }
+            ];
+            
+            console.log("\n📊 Security Features Status:");
+            console.table(securityFeatures);
+            
+            // Security parameters table
+            const parameters = {
+                'Max Price Deviation': `${Number(maxPriceDeviation)/100}%`,
+                'Max Tokens per Update': maxTokensPerUpdate.toString(),
+                'Staleness Threshold': `${stalenessThreshold}s (${Math.floor(Number(stalenessThreshold)/3600)}h)`,
+                'Circuit Breaker': `${Number(circuitBreakerThreshold)/100}%`,
+                'Rate Limiting': `${updateCooldown} blocks (~${Number(updateCooldown)*12}s)`
+            };
+            
+            console.log("\n⚙️  Security Parameters:");
+            console.table(parameters);
+            
+            // Validation assertions
+            expect(hasRole).to.be.true;
+            expect(updateCooldown).to.equal(5);
+            expect(maxTokensPerUpdate).to.equal(50);
+            expect(circuitBreakerThreshold).to.equal(2000);
+            expect(guardianAddr).to.equal(guardian.address);
+            expect(stalenessThreshold).to.equal(3600);
             expect(history.timestamps.length).to.be.greaterThan(0);
-            console.log("✅ Bounded Historical Data: ACTIVE");
             
             console.log("\n🎉 ALL SECURITY FEATURES ARE OPERATIONAL");
             console.log("   Users are protected against:");

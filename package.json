@@ -1,7 +1,14 @@
 {
-  "name": "resource-manager-dapp",
+  "name": "erc-7893-solvency-proof",
   "version": "1.0.0",
-  "description": "Resource Manager DApp implementation",
+  "description": "ERC-7893 DeFi Protocol Solvency Proof Implementation",
+  "imports": {
+    "@/*": "./src/*",
+    "@/contracts/*": "./contracts/*",
+    "@/typechain-types": "./typechain-types/index.ts",
+    "@/typechain-types/*": "./typechain-types/*",
+    "@/test/*": "./test/*"
+  },
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
@@ -11,6 +18,7 @@
     "copy:abis": "mkdir -p frontend/src/abis && find artifacts/contracts -name '*.json' ! -name '*.dbg.json' -exec cp {} frontend/src/abis/ \\;"
   },
   "dependencies": {
+    "@chainlink/contracts": "^1.4.0",
     "@openzeppelin/contracts": "^5.2.0"
   },
   "devDependencies": {
@@ -30,6 +38,7 @@
     "hardhat-gas-reporter": "^1.0.10",
     "solidity-coverage": "^0.8.5",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typechain": "^8.3.0",
     "typescript": "^5.3.3"
   }

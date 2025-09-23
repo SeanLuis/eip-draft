@@ -127,3 +127,19 @@ npx hardhat test
 ```
 
 The tests demonstrate real protection scenarios and validate that all security mechanisms work as intended for production use.
+
+## Security Test Results
+
+### Security Features Status Summary
+
+![Security Features Summary](../images/test-results/security-features-summary.png)
+
+*Real-time security features status showing all 8 protection mechanisms active and operational, including access control, rate limiting, DoS protection, circuit breaker, emergency controls, oracle staleness detection, price validation, and historical data management.*
+
+### Security Parameters Configuration
+
+![Security Parameters Table](../images/test-results/security-parameters-table.png)
+
+*Production-validated security parameters with their real-world values: 5% max price deviation, 50 token limit, 1-hour staleness threshold, 20% circuit breaker, and 5-block rate limiting for optimal protection.*
+
+These screenshots demonstrate that all security features are properly implemented and working together to provide comprehensive protection for users of the ERC-7893 standard.

@@ -51,7 +51,7 @@ This EIP represents the optimal approach by providing a flexible yet standardize
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119 and RFC 8174.
 
-![main](./assets/eip-7893/svg/main.svg)
+![main](./assets/erc-7893/images/diagrams/main.svg)
 
 ### Core Interfaces
 
@@ -415,7 +415,7 @@ Testing has confirmed that:
 3. State updates maintain consistency
 4. Ratio limits are effective for early detection
 
-![risk-thresholds](./assets/eip-7893/svg/risk-thresholds.svg)
+![risk-thresholds](./assets/erc-7893/images/diagrams/risk-thresholds.svg)
 
 ### Risk Assessment Framework
 
@@ -428,7 +428,7 @@ The standard implements a multi-tiered risk assessment system:
 
 2. Threshold Levels:
 
-![threshold-levels](./assets/eip-7893/svg/threshold-levels.svg)
+![threshold-levels](./assets/erc-7893/images/diagrams/threshold-levels.svg)
 
 ### Oracle Integration (Optional)
 
@@ -444,7 +444,7 @@ This standard intentionally leaves oracle implementation flexible. Protocols MAY
    - TWAP implementations
    - Medianized price feeds
 
-![oracle-integration](./assets/eip-7893/svg/oracle-integration.svg)
+![oracle-integration](./assets/erc-7893/images/diagrams/oracle-integration.svg)
 
 ### Implementation Requirements
 
@@ -495,7 +495,7 @@ Based on conducted tests, it is recommended:
    - Batch updates for multiple tokens
    - Limit array sizes in updates
 
-For more details please visit: [Solvency Proof Implementation](./assets/eip-7893/SolvencyProof.sol)
+For more details please visit: [Solvency Proof Implementation](./assets/erc-7893/contracts/SolvencyProof/SolvencyProof.sol)
 
 ## Backwards Compatibility
 
@@ -507,7 +507,7 @@ The reference implementation provides a comprehensive example of the standard in
 
 ### Core Contract Implementation
 
-[SolvencyProof.sol](./assets/eip-7893/SolvencyProof.sol) provides a complete implementation of the `ISolvencyProof` interface with:
+[SolvencyProof.sol](./assets/erc-7893/contracts/SolvencyProof/SolvencyProof.sol) provides a complete implementation of the `ISolvencyProof` interface with:
 
 - Full asset and liability tracking functionality
 - Configurable risk thresholds with alert mechanisms
@@ -515,11 +515,11 @@ The reference implementation provides a comprehensive example of the standard in
 - Oracle integration with security controls
 - Comprehensive event emission for off-chain monitoring
 
-This implementation is under license: [MIT](./assets/eip-7893/LICENSE.md)
+This implementation is under license: [MIT](./assets/erc-7893/LICENSE.md)
 
 ### Test Suite
 
-[SolvencyProof.test.ts](./assets/eip-7893/SolvencyProof.test.ts) contains an extensive test suite that:
+[SolvencyProof.test.ts](./assets/erc-7893/tests/SolvencyProof.test.ts) contains an extensive test suite that:
 
 - Validates mathematical accuracy of solvency calculations
 - Simulates market volatility scenarios including 50% flash crashes
@@ -529,7 +529,7 @@ This implementation is under license: [MIT](./assets/eip-7893/LICENSE.md)
 
 The implementation has been tested across various market conditions and validated to handle extreme volatility while maintaining accurate solvency reporting.
 
-For more information please visit: [Test Case Documentation](./assets/eip-7893/full-test-case.md)
+For more information please visit: [Test Case Documentation](./assets/erc-7893/docs/full-test-case.md)
 
 ### Implementation Highlights
 
@@ -563,20 +563,9 @@ When implementing solvency monitoring for DeFi protocols, security isn't optiona
 - **Staleness validation:** ETH/USD and major crypto pairs should use 1-hour maximum staleness (3600 seconds)
 - **Circuit breaker integration:** Pause solvency updates when price movements exceed 20% in single block
 
-```solidity
-// Example implementation pattern for price validation
-function validatePriceFeeds(address[] memory oracles, uint256[] memory prices) internal pure returns (bool) {
-    require(oracles.length >= 3, "Minimum 3 oracles required");
-    uint256 median = calculateMedian(prices);
-    for (uint i = 0; i < prices.length; i++) {
-        uint256 deviation = abs(prices[i] - median) * 10000 / median;
-        require(deviation <= 500, "Price deviation exceeds 5%"); // 500 = 5%
-    }
-    return true;
-}
-```
+Implementation patterns for price validation should include median calculation, deviation checks, and appropriate error handling as demonstrated in the reference implementation.
 
-**Real-world reference:** Chainlink's Feed Registry (0x47Fb2585D2C56Fe188D0E6ec628a38b74fCeeeDf) handles this well, and Aave's AaveOracle provides a solid pattern for custom implementations.
+**Real-world reference:** Chainlink's Feed Registry and Aave's AaveOracle provide solid patterns for oracle integration.
 
 **TWAP Integration:**
 - **30-minute minimum windows** for manipulation resistance (based on Uniswap V3 security analysis)
@@ -585,63 +574,20 @@ function validatePriceFeeds(address[] memory oracles, uint256[] memory prices) i
 
 **Oracle Failure Handling:**
 
-```solidity
-contract SolvencyProofWithFallback {
-    uint256 constant STALENESS_THRESHOLD = 3600; // 1 hour
-    
-    function getReliablePrice(address asset) public view returns (uint256) {
-        (uint256 price, uint256 timestamp) = primaryOracle.getPrice(asset);
-        
-        if (block.timestamp - timestamp > STALENESS_THRESHOLD) {
-            // Fallback to secondary oracle or cached price
-            return fallbackOracle.getPrice(asset);
-        }
-        return price;
-    }
-}
-```
+Implementations should include fallback mechanisms for oracle failures, including timestamp validation, secondary oracle integration, and graceful degradation patterns. The reference implementation demonstrates proper staleness detection and fallback strategies.
 
 ### Access Control - Specific Implementation
 
-**Role-Based Permissions using OpenZeppelin AccessControl:**
+**Role-Based Permissions:**
 
-```solidity
-import "@openzeppelin/contracts/access/AccessControl.sol";
-
-contract SolvencyProof is ISolvencyProof, AccessControl {
-    bytes32 public constant ORACLE_ROLE = keccak256("ORACLE_ROLE");
-    bytes32 public constant EMERGENCY_ROLE = keccak256("EMERGENCY_ROLE");
-
-    modifier onlyOracle() {
-        require(hasRole(ORACLE_ROLE, msg.sender), "Caller is not an oracle");
-        _;
-    }
-    
-    modifier onlyEmergency() {
-        require(hasRole(EMERGENCY_ROLE, msg.sender), "Caller cannot pause");
-        _;
-    }
-}
-```
+Implementations should use established access control patterns such as OpenZeppelin's AccessControl for role management, including oracle roles, emergency roles, and administrative functions.
 
 **Rate Limiting Implementation:**
 - **Maximum 1 update per 5 blocks** per authorized oracle to prevent spam attacks
 - **Daily update limits:** 288 updates per day (every 5 minutes) for high-frequency protocols  
 - **Emergency cooldowns:** 1-hour minimum between emergency pause activations
 
-```solidity
-mapping(address => uint256) public lastUpdateBlock;
-uint256 public constant UPDATE_COOLDOWN = 5; // blocks
-
-modifier rateLimited() {
-    require(
-        block.number >= lastUpdateBlock[msg.sender] + UPDATE_COOLDOWN,
-        "Update too frequent"
-    );
-    lastUpdateBlock[msg.sender] = block.number;
-    _;
-}
-```
+Rate limiting should be implemented using block-based cooldowns and per-oracle tracking as demonstrated in the reference implementation.
 
 **Multi-signature Requirements:**
 - 3/5 multisig for parameter changes (threshold updates, oracle management)
@@ -661,19 +607,7 @@ modifier rateLimited() {
 
 **Alert System Implementation:**
 
-```solidity
-function checkRiskThresholds(uint256 currentRatio) internal {
-    if (currentRatio < 10500) { // 105%
-        emit RiskAlert("CRITICAL", currentRatio, 10500, block.timestamp);
-        _pauseProtocol();
-    } else if (currentRatio < 11000) { // 110%
-        emit RiskAlert("HIGH_RISK", currentRatio, 11000, block.timestamp);
-        _restrictOperations();
-    } else if (currentRatio < 12000) { // 120%
-        emit RiskAlert("WARNING", currentRatio, 12000, block.timestamp);
-    }
-}
-```
+Risk threshold monitoring should include graduated alerts (CRITICAL, HIGH_RISK, WARNING) with appropriate automated responses. The reference implementation demonstrates proper threshold checking and event emission patterns.
 
 **Historical Data Protection:**
 - **Immutable storage patterns** to prevent historical data manipulation
@@ -684,27 +618,7 @@ function checkRiskThresholds(uint256 currentRatio) internal {
 
 **Circuit Breaker Integration (Following ERC-7265 pattern):**
 
-```solidity
-contract CircuitBreakerIntegration {
-    bool public emergencyPaused;
-    uint256 public pauseEndTime;
-    uint256 constant CIRCUIT_BREAKER_THRESHOLD = 2000; // 20%
-    
-    function checkCircuitBreaker(uint256 oldValue, uint256 newValue) internal {
-        if (oldValue > 0) {
-            uint256 change = newValue > oldValue 
-                ? ((newValue - oldValue) * 10000) / oldValue
-                : ((oldValue - newValue) * 10000) / oldValue;
-                
-            if (change > CIRCUIT_BREAKER_THRESHOLD) {
-                emergencyPaused = true;
-                pauseEndTime = block.timestamp + 3600; // 1 hour pause
-                emit CircuitBreakerTriggered(change, CIRCUIT_BREAKER_THRESHOLD);
-            }
-        }
-    }
-}
-```
+Circuit breaker mechanisms should monitor for dramatic value changes and automatically pause operations when thresholds are exceeded. Implementation should include emergency pause states, time-based recovery, and appropriate event emission.
 
 - **Automatic pause triggers:** Oracle deviation >20%, liquidity drop >50% in 1 hour
 - **Initial pause duration:** 1-4 hours with exponential backoff for repeated triggers
@@ -719,21 +633,7 @@ contract CircuitBreakerIntegration {
 
 **Bounded Operations:**
 
-```solidity
-uint256 public constant MAX_TOKENS_PER_UPDATE = 50;
-uint256 public constant MAX_HISTORY_ENTRIES = 8760; // 1 year hourly
-
-function updateAssets(
-    address[] calldata tokens,
-    uint256[] calldata amounts,
-    uint256[] calldata values
-) external onlyOracle {
-    require(tokens.length <= MAX_TOKENS_PER_UPDATE, "Too many tokens");
-    require(tokens.length == amounts.length && amounts.length == values.length, "Array length mismatch");
-    
-    // Implementation...
-}
-```
+Implementations should enforce reasonable limits on array sizes, historical data storage, and operation complexity to prevent denial-of-service attacks and ensure predictable gas consumption.
 
 **DoS Attack Prevention:**
 - **Maximum 50 tokens per update** to prevent out-of-gas scenarios
@@ -743,25 +643,11 @@ function updateAssets(
 
 ### Integration Security Patterns
 
-**Liquidation Protection:**
+**Liquidation Protection Pattern:**
 
-```solidity
-function safeLiquidation(uint256 debtAmount, uint256 maxSlippage) internal view returns (bool) {
-    uint256 healthFactor = getSolvencyRatio();
-    
-    // Require health factor buffer before liquidation
-    require(healthFactor < 11000, "Above liquidation threshold"); // 110%
-    
-    // Limit partial liquidation to prevent complete liquidation
-    uint256 maxLiquidation = debtAmount * 50 / 100; // 50% maximum
-    require(liquidationAmount <= maxLiquidation, "Liquidation too large");
-    
-    // Slippage protection
-    require(maxSlippage <= 300, "Slippage too high"); // 3% max
-    
-    return true;
-}
-```
+> **Note:** This is a recommended integration pattern for protocols implementing ERC-7893. The core SolvencyProof contract focuses on solvency monitoring; liquidation logic should be implemented in the consuming protocol.
+
+Liquidation integrations should include health factor validation, partial liquidation limits, and slippage protection mechanisms. The reference implementation demonstrates safe liquidation patterns with appropriate safeguards.
 
 - **Health factor buffers:** 110% warning threshold before 105% liquidation
 - **Partial liquidation limits:** Maximum 50% of debt in single transaction
@@ -807,9 +693,11 @@ All security parameters in the reference implementation have been validated agai
 | **Rate Limiting** | 5 blocks | ~1 minute (12s avg block time) | ✅ DoS protection |
 | **Gas Optimization** | 50 token max | 30M gas block limit consideration | ✅ Network compliant |
 
-**Security Documentation:** We've documented our security approach thoroughly. Check out the [Security Validation Report](./assets/erc-7893/security-validation-report.md) for detailed parameter validation and the [Fork Testing Guide](./assets/erc-7893/fork-testing-guide.md) for mainnet validation instructions.
+**Security Documentation:** We've documented our security approach thoroughly. Check out the [Security Validation Report](./assets/erc-7893/docs/security-validation-report.md) for detailed parameter validation and the [Fork Testing Guide](./assets/erc-7893/docs/fork-testing-guide.md) for mainnet validation instructions.
 
 **Test Coverage:** Our test suite includes 23 tests total—13 for core ERC functionality and 10 focused on security features. Every security-critical code path is tested.
+
+**Testing Approach:** The `MaliciousOracle.sol` and `MockMultiOracle.sol` contracts simulate attack scenarios and consensus mechanisms for testing purposes. They do not connect to real oracle networks but provide comprehensive coverage of potential attack vectors and edge cases that protocols implementing this ERC should be prepared to handle.
 
 ## Copyright
 

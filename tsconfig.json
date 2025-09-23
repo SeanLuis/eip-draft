@@ -1,12 +1,37 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "outDir": "./dist",
+    "rootDir": "./",
     "strict": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/typechain-types": ["./typechain-types"],
+      "@/typechain-types/*": ["./typechain-types/*"],
+      "@/contracts/*": ["./contracts/*"],
+      "@/test/*": ["./test/*"]
+    }
   },
-  "include": ["./scripts", "./test", "./frontend/src", "./hardhat.config.ts"]
+  "include": [
+    "./contracts/**/*",
+    "./test/**/*", 
+    "./typechain-types/**/*",
+    "./scripts/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "artifacts",
+    "cache"
+  ],
+  "files": ["./hardhat.config.ts"]
 }

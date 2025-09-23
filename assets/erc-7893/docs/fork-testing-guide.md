@@ -9,7 +9,7 @@ Create a `.env` file in your project root:
 ```bash
 # Fork Testing Configuration
 FORK_MAINNET=false
-MAINNET_RPC_URL=https://mainnet.infura.io/v3/your-project-id
+MAINNET_RPC_URL=https://ethereum.publicnode.com
 
 # Gas Reporting
 REPORT_GAS=false
@@ -104,3 +104,37 @@ it("Should consume less gas than Aave liquidation", async function() {
 ```
 
 This comprehensive testing approach ensures the ERC-7893 implementation meets production-grade requirements and performs competitively against established DeFi protocols.
+
+## Fork Testing Results
+
+### Aave V3 Integration Validation
+
+![Aave Integration Comparison](../images/test-results/aave-integration-comparison.png)
+
+*Configuration comparison between Aave V3 WETH parameters and ERC-7893 implementation showing proper alignment of liquidation thresholds, bonuses, and health factors.*
+
+![Aave Parameter Alignment](../images/test-results/aave-parameter-alignment.png)
+
+*Parameter alignment summary demonstrating that ERC-7893's minimum health factor (110%) provides an appropriate safety buffer above Aave's liquidation threshold (83%), with a 27% safety margin.*
+
+### Chainlink Oracle Integration
+
+![Chainlink Price Data](../images/test-results/chainlink-price-data.png)
+
+*Real Chainlink price feeds from mainnet fork showing ETH/USD at $1,834.80 and BTC/USD at $34,727.83 with 100% confidence scores and fresh data status.*
+
+![Price Validation Criteria](../images/test-results/price-validation-criteria.png)
+
+*Price validation criteria and results showing successful validation of ETH ($1,000-$5,000 range) and BTC ($20,000-$100,000 range) with >80% confidence requirements met.*
+
+### Market Analysis and Circuit Breakers
+
+![Market Analysis](../images/test-results/market-analysis-volatility.png)
+
+*Real ETH market analysis showing current price ($1,834.80), 0% volatility, stable trend, 10 history points, 0.17% price change, and normal circuit breaker status.*
+
+![Circuit Breaker Analysis](../images/test-results/circuit-breaker-analysis.png)
+
+*Circuit breaker analysis showing all metrics within normal limits: price change (0.17% vs 20% threshold), volatility (0% vs 15% threshold), sufficient historical data (10 points), and normal market conditions resulting in no action required.*
+
+These results demonstrate successful integration with real mainnet protocols and validate that ERC-7893 parameters are realistic and properly calibrated against industry standards.

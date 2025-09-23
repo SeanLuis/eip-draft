@@ -1,12 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
-import { 
-    SolvencyProof,
-    MockMultiOracle,
-    MaliciousOracle,
-    MockToken
-} from "../typechain-types";
 
 /**
  * Security Features Test Suite for ERC-7893 Solvency Proof Standard

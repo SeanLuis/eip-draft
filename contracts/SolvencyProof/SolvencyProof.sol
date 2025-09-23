@@ -603,6 +603,242 @@ contract SolvencyProof is ISolvencyProof, AccessControl, ReentrancyGuard {
         return new address[](0);
     }
     
+    // === Liquidation Integration ===
+    
+    /// @notice Liquidation configuration
+    struct LiquidationConfig {
+        uint256 maxLiquidationRatio; // Max % of debt liquidatable in one tx
+        uint256 liquidationBonus; // Bonus for liquidators (basis points)
+        uint256 minHealthFactor; // Minimum health factor before liquidation
+        uint256 maxSlippage; // Maximum allowed slippage (basis points)
+        bool isActive; // Whether liquidation is enabled for this protocol
+    }
+    
+    mapping(address => LiquidationConfig) public liquidationConfigs;
+    mapping(address => mapping(address => uint256)) public userDebt; // protocol => user => debt
+    mapping(address => mapping(address => uint256)) public userCollateral; // protocol => user => collateral
+    
+    event LiquidationConfigured(address indexed protocol, LiquidationConfig config);
+    event LiquidationExecuted(
+        address indexed protocol,
+        address indexed user,
+        address indexed liquidator,
+        uint256 debtAmount,
+        uint256 collateralAmount,
+        uint256 bonus
+    );
+    event LiquidationRiskAlert(address indexed protocol, address indexed user, uint256 healthFactor);
+
+    /**
+     * @notice Configure liquidation parameters for a protocol
+     * @param protocol Protocol address
+     * @param maxLiquidationRatio Maximum liquidation ratio (50% = 5000)
+     * @param liquidationBonus Liquidator bonus (5% = 500)
+     * @param minHealthFactor Minimum health factor for liquidation (110% = 11000)
+     * @param maxSlippage Maximum slippage tolerance (3% = 300)
+     */
+    function configureLiquidation(
+        address protocol,
+        uint256 maxLiquidationRatio,
+        uint256 liquidationBonus,
+        uint256 minHealthFactor,
+        uint256 maxSlippage
+    ) external onlyRole(ADMIN_ROLE) {
+        require(protocol != address(0), "Invalid protocol");
+        require(maxLiquidationRatio <= 5000, "Max liquidation ratio too high"); // 50% max
+        require(liquidationBonus <= 1500, "Liquidation bonus too high"); // 15% max
+        require(minHealthFactor >= 10500, "Min health factor too low"); // 105% min
+        require(maxSlippage <= 1000, "Max slippage too high"); // 10% max
+        
+        liquidationConfigs[protocol] = LiquidationConfig({
+            maxLiquidationRatio: maxLiquidationRatio,
+            liquidationBonus: liquidationBonus,
+            minHealthFactor: minHealthFactor,
+            maxSlippage: maxSlippage,
+            isActive: true
+        });
+        
+        emit LiquidationConfigured(protocol, liquidationConfigs[protocol]);
+    }
+    
+    /**
+     * @notice Execute safe liquidation with comprehensive validation
+     * @param protocol Protocol performing liquidation
+     * @param user User being liquidated
+     * @param debtAmount Amount of debt to liquidate
+     * @param expectedCollateral Expected collateral to receive
+     * @param maxSlippage Maximum slippage tolerance for this liquidation
+     * @return actualCollateral Actual collateral received
+     * @return liquidationBonus Bonus paid to liquidator
+     */
+    function safeLiquidation(
+        address protocol,
+        address user,
+        uint256 debtAmount,
+        uint256 expectedCollateral,
+        uint256 maxSlippage
+    ) external nonReentrant returns (uint256 actualCollateral, uint256 liquidationBonus) {
+        require(!emergencyPaused || block.timestamp > pauseEndTime, "Emergency paused");
+        
+        LiquidationConfig memory config = liquidationConfigs[protocol];
+        require(config.isActive, "Liquidation not configured for protocol");
+        
+        // Validate liquidation preconditions
+        uint256 healthFactor = calculateUserHealthFactor(protocol, user);
+        require(healthFactor < config.minHealthFactor, "User health factor too high");
+        
+        uint256 totalDebt = userDebt[protocol][user];
+        uint256 totalCollateral = userCollateral[protocol][user];
+        
+        require(totalDebt > 0, "No debt to liquidate");
+        require(totalCollateral > 0, "No collateral available");
+        
+        // Validate liquidation amount
+        uint256 maxLiquidationAmount = (totalDebt * config.maxLiquidationRatio) / 10000;
+        require(debtAmount <= maxLiquidationAmount, "Liquidation amount too large");
+        
+        // Calculate collateral with bonus
+        uint256 collateralRatio = (totalCollateral * 10000) / totalDebt;
+        uint256 baseCollateral = (debtAmount * collateralRatio) / 10000;
+        liquidationBonus = (baseCollateral * config.liquidationBonus) / 10000;
+        actualCollateral = baseCollateral + liquidationBonus;
+        
+        // Validate slippage
+        uint256 actualSlippage = expectedCollateral > actualCollateral
+            ? ((expectedCollateral - actualCollateral) * 10000) / expectedCollateral
+            : ((actualCollateral - expectedCollateral) * 10000) / expectedCollateral;
+            
+        uint256 effectiveMaxSlippage = maxSlippage > 0 ? maxSlippage : config.maxSlippage;
+        require(actualSlippage <= effectiveMaxSlippage, "Slippage too high");
+        
+        // Ensure liquidation improves user's health factor
+        uint256 newDebt = totalDebt - debtAmount;
+        uint256 newCollateral = totalCollateral - actualCollateral;
+        uint256 newHealthFactor = newDebt > 0 ? (newCollateral * 10000) / newDebt : 20000; // 200% if no debt
+        
+        require(newHealthFactor > healthFactor, "Liquidation must improve health factor");
+        require(newHealthFactor >= 10500 || newDebt == 0, "Final health factor too low");
+        
+        // Update user positions
+        userDebt[protocol][user] = newDebt;
+        userCollateral[protocol][user] = newCollateral;
+        
+        // Update protocol metrics if this liquidation affects overall solvency
+        _updateMetrics();
+        
+        emit LiquidationExecuted(protocol, user, msg.sender, debtAmount, actualCollateral, liquidationBonus);
+        
+        return (actualCollateral, liquidationBonus);
+    }
+    
+    /**
+     * @notice Calculate user health factor for liquidation assessment
+     * @param protocol Protocol address
+     * @param user User address
+     * @return healthFactor User's current health factor (basis points)
+     */
+    function calculateUserHealthFactor(address protocol, address user) public view returns (uint256) {
+        uint256 debt = userDebt[protocol][user];
+        uint256 collateral = userCollateral[protocol][user];
+        
+        if (debt == 0) return 20000; // 200% - maximum health
+        if (collateral == 0) return 0; // 0% - liquidatable
+        
+        return (collateral * 10000) / debt;
+    }
+    
+    /**
+     * @notice Check if user is eligible for liquidation
+     * @param protocol Protocol address
+     * @param user User address
+     * @return isEligible Whether user can be liquidated
+     * @return healthFactor Current health factor
+     * @param maxLiquidatable Maximum debt amount that can be liquidated
+     */
+    function getLiquidationEligibility(address protocol, address user) external view returns (
+        bool isEligible,
+        uint256 healthFactor,
+        uint256 maxLiquidatable
+    ) {
+        LiquidationConfig memory config = liquidationConfigs[protocol];
+        if (!config.isActive) return (false, 0, 0);
+        
+        healthFactor = calculateUserHealthFactor(protocol, user);
+        isEligible = healthFactor < config.minHealthFactor;
+        
+        if (isEligible) {
+            uint256 totalDebt = userDebt[protocol][user];
+            maxLiquidatable = (totalDebt * config.maxLiquidationRatio) / 10000;
+        }
+        
+        return (isEligible, healthFactor, maxLiquidatable);
+    }
+    
+    /**
+     * @notice Update user debt and collateral (called by integrated protocols)
+     * @param user User address
+     * @param newDebt New debt amount
+     * @param newCollateral New collateral amount
+     */
+    function updateUserPosition(
+        address user,
+        uint256 newDebt,
+        uint256 newCollateral
+    ) external onlyOracle {
+        address protocol = msg.sender;
+        
+        userDebt[protocol][user] = newDebt;
+        userCollateral[protocol][user] = newCollateral;
+        
+        // Check for liquidation risk
+        uint256 healthFactor = calculateUserHealthFactor(protocol, user);
+        LiquidationConfig memory config = liquidationConfigs[protocol];
+        
+        if (config.isActive && healthFactor < config.minHealthFactor + 500) { // Alert 5% before liquidation
+            emit LiquidationRiskAlert(protocol, user, healthFactor);
+        }
+    }
+    
+    /**
+     * @notice Get comprehensive liquidation status for a user
+     * @param protocol Protocol address
+     * @param user User address
+     * @return status Liquidation status struct
+     */
+    function getLiquidationStatus(address protocol, address user) external view returns (
+        LiquidationStatus memory status
+    ) {
+        LiquidationConfig memory config = liquidationConfigs[protocol];
+        uint256 debt = userDebt[protocol][user];
+        uint256 collateral = userCollateral[protocol][user];
+        uint256 healthFactor = calculateUserHealthFactor(protocol, user);
+        
+        status = LiquidationStatus({
+            isEligible: config.isActive && healthFactor < config.minHealthFactor,
+            healthFactor: healthFactor,
+            totalDebt: debt,
+            totalCollateral: collateral,
+            maxLiquidatable: (debt * config.maxLiquidationRatio) / 10000,
+            liquidationBonus: config.liquidationBonus,
+            protocolConfig: config
+        });
+        
+        return status;
+    }
+    
+    /**
+     * @notice Liquidation status structure
+     */
+    struct LiquidationStatus {
+        bool isEligible;
+        uint256 healthFactor;
+        uint256 totalDebt;
+        uint256 totalCollateral;
+        uint256 maxLiquidatable;
+        uint256 liquidationBonus;
+        LiquidationConfig protocolConfig;
+    }
+
     // === Test Utilities (for testing only) ===
     
     /// @notice Test mode flag to disable security features for backward compatibility
