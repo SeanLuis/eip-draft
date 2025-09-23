@@ -30,14 +30,8 @@ FORK_MAINNET=true REPORT_GAS=true npx hardhat test
 ### Protocol-Specific Testing
 
 ```bash
-# Test against Aave V3
-FORK_AAVE=true npx hardhat test test/fork/AaveIntegration.test.ts
-
-# Test against Compound V3  
-FORK_COMPOUND=true npx hardhat test test/fork/CompoundIntegration.test.ts
-
-# Test Chainlink oracle integration
-FORK_CHAINLINK=true npx hardhat test test/fork/ChainlinkIntegration.test.ts
+# Test against Aave V3 (includes Chainlink oracle validation)
+FORK_MAINNET=true npx hardhat test test/AaveIntegration.test.ts
 ```
 
 ## Production Protocol Addresses
@@ -49,10 +43,6 @@ When testing against mainnet fork, use these verified addresses:
 - **PoolDataProvider**: `0x7B4EB56E7CD4b454BA8ff71E4518426369a138a3`
 - **WETH Gateway**: `0x893411580e590D62dDBca8a703d61Cc4A8c7b2b9`
 
-### Compound V3
-- **cUSDCv3**: `0xc3d688B66703497DAA19211EEdff47f25384cdc3`
-- **Configurator**: `0x316f9708bB98af7dA9c68C1C3b5e79039cD336E3`
-- **Rewards**: `0x1B0e765F6224C21223AeA2af16c1C46E38885a40`
 
 ### Chainlink Oracles
 - **ETH/USD**: `0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419`
@@ -71,21 +61,21 @@ Fork testing should demonstrate:
 ## Sample Fork Test Structure
 
 ```typescript
-describe("Fork Testing: Aave Integration", function() {
+describe("🔗 REAL Aave V3 + Chainlink Integration", function() {
   before(async function() {
     // Skip if not fork testing
-    if (!process.env.FORK_AAVE) this.skip();
+    if (!process.env.FORK_MAINNET) this.skip();
   });
   
   it("Should validate against Aave V3 liquidation thresholds", async function() {
-    const aavePool = await ethers.getContractAt("IPool", AAVE_V3_POOL);
-    const wethReserveData = await aavePool.getReserveData(WETH_ADDRESS);
+    const aaveDataProvider = await ethers.getContractAt("IAaveDataProvider", AAVE_V3_DATA_PROVIDER);
+    const aaveConfig = await aaveDataProvider.getReserveConfigurationData(WETH);
     
-    // Compare our critical ratio with Aave's liquidation threshold
-    const aaveLiquidationThreshold = wethReserveData.configuration.liquidationThreshold;
-    const ourCriticalRatio = await solvencyProof.CRITICAL_RATIO();
+    // Compare our parameters with Aave's configuration
+    const [decimals, ltv, liquidationThreshold, liquidationBonus] = aaveConfig;
+    const yourConfig = await solvencyProof.liquidationConfigs(await solvencyProof.getAddress());
     
-    expect(ourCriticalRatio).to.be.closeTo(aaveLiquidationThreshold, 500); // Within 5%
+    expect(Number(yourConfig.minHealthFactor)).to.be.gt(Number(liquidationThreshold));
   });
 });
 ```
