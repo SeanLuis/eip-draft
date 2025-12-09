@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-text-primary: #3c4257;
+    --color-text-secondary: #4f566b;
+    --color-text-title: #1a1f36;
+    --color-accent: #635bff;
+    --color-accent-hover: #0a2540;
+    --color-bg-sidebar: #f7f9fc;
+    --color-border: #e3e8ee;
+  }
+
+  html {
+    @apply text-[16px] antialiased text-[#3c4257] bg-white;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  body {
+    @apply font-sans;
+  }
+}
+
+/* Typography & Prose */
+.prose h1 {
+  @apply text-3xl font-bold tracking-tight mb-8 text-[#1a1f36];
+  letter-spacing: -0.02em;
+}
+
+.prose h2 {
+  @apply text-2xl font-bold tracking-tight mt-10 mb-4 text-[#1a1f36] border-b border-gray-100 pb-2;
+  letter-spacing: -0.01em;
+}
+
+.prose h3 {
+  @apply text-xl font-semibold mt-8 mb-3 text-[#1a1f36];
+}
+
+.prose p {
+  @apply mb-4 leading-7 text-[#3c4257];
+}
+
+.prose ul {
+  @apply list-disc list-outside ml-5 mb-6 text-[#3c4257];
+}
+
+.prose li {
+  @apply mb-1 pl-1;
+}
+
+.prose a:not(.btn):not([class*="rounded-md"]):not([class*="rounded-lg"]) {
+  @apply text-[#635bff] font-medium no-underline hover:text-[#0a2540] transition-colors;
+}
+
+/* Button styles - ensure text is always visible */
+.btn-primary {
+  @apply inline-flex items-center px-5 py-2.5 rounded-md font-medium transition-colors shadow-sm text-sm;
+  background-color: #635bff !important;
+  color: white !important;
+}
+.btn-primary:hover {
+  background-color: #0a2540 !important;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center px-5 py-2.5 rounded-md font-medium transition-colors text-sm;
+  background-color: white !important;
+  color: #3c4257 !important;
+  border: 1px solid #e3e8ee;
+}
+.btn-secondary:hover {
+  background-color: #f7f9fc !important;
+}
+
+.prose code {
+  @apply bg-[#f7f9fc] text-[#3c4257] px-1.5 py-0.5 rounded text-[0.9em] border border-[#e3e8ee] font-medium;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.prose pre {
+  @apply bg-[#1a1f36] text-white p-5 rounded-lg overflow-x-auto mb-8 text-sm leading-6 shadow-sm;
+}
+
+.prose pre code {
+  @apply bg-transparent text-white border-0 p-0 text-sm;
+}
+
+.prose blockquote {
+  @apply border-l-[3px] border-[#635bff] pl-4 py-1 my-6 text-[#4f566b] italic bg-[#f7f9fc] rounded-r-md;
+}
+
+.prose table {
+  @apply w-full text-left border-collapse mb-8 text-sm;
+}
+
+.prose th {
+  @apply py-3 px-4 font-semibold text-[#1a1f36] bg-[#f7f9fc] border-b border-[#e3e8ee] text-xs uppercase tracking-wider;
+}
+
+.prose td {
+  @apply py-3 px-4 border-b border-[#e3e8ee] text-[#3c4257];
+}
+
+.prose img {
+  @apply rounded-lg border border-[#e3e8ee] shadow-sm my-8;
+}
+
+/* Custom Scrollbar for sidebar */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background-color: #dcdce0;
+  border-radius: 20px;
+}

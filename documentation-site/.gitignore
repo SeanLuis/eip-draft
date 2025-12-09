@@ -1,0 +1,10 @@
+# Generated during build
+src/content/docs/
+public/images/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.astro/

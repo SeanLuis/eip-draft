@@ -11,3 +11,9 @@ artifacts
 
 # Frontend
 frontend/dist
+
+# Documentation site (Astro)
+documentation-site/dist
+documentation-site/.astro
+documentation-site/src/content/docs
+documentation-site/public/images

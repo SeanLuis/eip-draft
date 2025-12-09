@@ -1,0 +1,77 @@
+name: Deploy Documentation to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'documentation-site/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./documentation-site
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Copy and process assets
+        run: |
+          # Copy images
+          mkdir -p public/images
+          cp -r ../assets/erc-7893/images/* public/images/
+          
+          # Copy and process docs (add frontmatter, fix image paths)
+          mkdir -p src/content/docs
+          for file in ../assets/erc-7893/docs/*.md; do
+            filename=$(basename "$file")
+            title=$(echo "$filename" | sed 's/-/ /g' | sed 's/.md//' | sed 's/\b\(.\)/\u\1/g')
+            {
+              echo "---"
+              echo "title: \"$title\""
+              echo "---"
+              echo ""
+              # Fix image paths: ../images/ -> /images/
+              sed 's|\.\./images/|/images/|g' "$file"
+            } > "src/content/docs/$filename"
+          done
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm run build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./documentation-site/dist
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

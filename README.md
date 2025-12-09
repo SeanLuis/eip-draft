@@ -3,8 +3,8 @@ eip: 7893
 title: DeFi Protocol Solvency Proof Mechanism
 description: Interface for DeFi protocols to implement verifiable solvency proofs and monitor financial health status
 author: Sean Luis Guada Rodríguez (@SeanLuis) <seanluis47@gmail.com>
-discussions-to: https://ethereum-magicians.org/t/erc-7893-defi-protocol-solvency-proof-mechanism/24566
-status: Draft
+discussions-to: https://ethereum-magicians.org/t/eip-7893-defi-protocol-solvency-proof-mechanism/24566
+status: Review
 type: Standards Track
 category: ERC
 created: 2025-01-30
@@ -51,16 +51,27 @@ This EIP represents the optimal approach by providing a flexible yet standardize
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119 and RFC 8174.
 
-![main](./assets/erc-7893/images/diagrams/main.svg)
+![main](https://seanluis.github.io/erc-7893-docs/images/diagrams/main.svg)
 
-### Core Interfaces
+### Core Interface Requirements
 
-The standard defines a comprehensive interface for solvency verification. Key features include:
+Compliant implementations MUST implement the `ISolvencyProof` interface.
 
-1. Asset and Liability Management
-   - Protocol assets tracking
-   - Protocol liabilities tracking
-   - Real-time value updates
+Compliant implementations MUST provide the following functionality:
+
+1. **Asset and Liability Tracking**: Implementations MUST maintain current protocol assets and liabilities with token addresses, amounts, and ETH-denominated values.
+
+2. **Timestamp Recording**: Implementations MUST record the timestamp of each asset and liability update.
+
+3. **Solvency Calculation**: Implementations MUST calculate the solvency ratio as `(Total Assets / Total Liabilities) × 10000`.
+
+4. **Historical Data**: Implementations MUST maintain historical records of solvency metrics for querying within specified time ranges.
+
+5. **Event Emission**: Implementations MUST emit `SolvencyMetricsUpdated` events when financial metrics are updated, and SHOULD emit `RiskAlert` events when risk thresholds are breached.
+
+6. **Array Validation**: Implementations MUST ensure that all arrays in `ProtocolAssets` and `ProtocolLiabilities` structures are of equal length.
+
+7. **Value Denomination**: Implementations MUST express all values in ETH with 18 decimals for consistency.
 
 ```solidity
 // SPDX-License-Identifier: CC0-1.0
@@ -198,50 +209,47 @@ interface ISolvencyProof {
 }
 ```
 
-### Optional Oracle Management
+### Oracle Authorization Requirements
 
-While not part of the core standard, implementations should consider including oracle management:
+Implementations MUST restrict calls to `updateAssets` and `updateLiabilities` to authorized addresses only. Implementations MUST revert these function calls when `msg.sender` is not an authorized oracle.
+
+Implementations MAY provide oracle management functions. If provided, implementations SHOULD emit events when oracle authorization changes.
+
+Example oracle management pattern (OPTIONAL):
 
 ```solidity
-// Recommended but not required
+// Optional oracle management pattern
 event OracleUpdated(address indexed oracle, bool authorized);
 function setOracle(address oracle, bool authorized) external;
 ```
 
-This provides:
-- Flexible price feed management
-- Security controls
-- Update authorization
+The core standard focuses on solvency verification requirements. Oracle management implementation details are left to individual protocol needs.
 
-The core standard focuses on solvency verification, leaving oracle management implementation details to individual protocols.
+### Update Function Requirements
 
-### How the Interface Works
+Implementations MUST validate input parameters for `updateAssets` and `updateLiabilities` functions:
 
-The `ISolvencyProof` interface provides a standardized, on-chain mechanism for DeFi protocols to report, verify, and monitor their solvency status. This interface is designed to be both comprehensive and flexible, supporting a wide range of protocol architectures and risk management strategies.
+1. Implementations MUST revert if the `tokens`, `amounts`, and `values` arrays are not of equal length.
+2. Implementations MUST update the timestamp field to the current block timestamp (`block.timestamp`) when processing updates.
+3. Implementations MUST emit a `SolvencyMetricsUpdated` event after successfully updating assets or liabilities.
 
-#### Asset and Liability Management
-Authorized oracles are responsible for updating the protocol's asset and liability data using the `updateAssets` and `updateLiabilities` functions. These updates include the list of tokens, their respective amounts, and their current values denominated in ETH. Each update is timestamped, ensuring that all solvency calculations and historical records are based on the most recent and accurate data available. The interface enforces that all arrays provided must be of equal length, and values must be denominated in ETH with 18 decimals for consistency and comparability.
+### Query Function Requirements
 
-#### Solvency Calculation and Verification
-The `getSolvencyRatio` function computes the current solvency ratio, defined as the total value of assets divided by the total value of liabilities, scaled by a factor of 10,000 for precision. The `verifySolvency` function checks whether the protocol meets the minimum required solvency ratio (e.g., 105%), returning both a boolean status and the current health factor. This allows both on-chain and off-chain systems to quickly assess the protocol's financial health and respond accordingly.
+Implementations MUST provide the following query capabilities:
 
-#### Historical Data and Trend Analysis
-To support audits, regulatory requirements, and trend analysis, the `getSolvencyHistory` function enables retrieval of historical solvency metrics, including timestamps, ratios, and the corresponding asset and liability states over a specified time range. This historical data is crucial for reconstructing past events, analyzing risk trends, and providing transparency to stakeholders.
+1. `getProtocolAssets()` MUST return the current state of protocol assets including all token addresses, amounts, values, and the timestamp of the last update.
 
-#### Event Emission and Risk Alerts
-Whenever the protocol's financial metrics are updated, the `SolvencyMetricsUpdated` event is emitted, providing real-time data for off-chain monitoring and analytics. If a risk threshold is breached (for example, if the solvency ratio falls below a critical level), the `RiskAlert` event is triggered, signaling the severity and nature of the risk. These events enable automated monitoring systems, auditors, and users to receive timely notifications and take appropriate action.
+2. `getProtocolLiabilities()` MUST return the current state of protocol liabilities including all token addresses, amounts, values, and the timestamp of the last update.
 
-#### Oracle Integration and Security
-The interface is designed to be oracle-agnostic, allowing protocols to integrate with a variety of price feed solutions (e.g., Chainlink, API3, custom oracles). Only authorized oracles can update asset and liability data, ensuring that updates are secure and resistant to manipulation. The optional `setOracle` and `OracleUpdated` event pattern is recommended for managing oracle permissions and maintaining robust security controls.
+3. `getSolvencyRatio()` MUST calculate and return the solvency ratio as `(totalAssets * 10000) / totalLiabilities`. If `totalLiabilities` is zero, implementations SHOULD return a value indicating maximum solvency or revert with an appropriate error.
 
-#### Intended Usage and Integration
-Protocols implementing this interface are expected to:
-- Integrate with trusted oracles for price feeds and position updates.
-- Maintain up-to-date records of their financial positions.
-- Emit standardized events for off-chain monitoring and risk management.
-- Provide transparent, verifiable, and standardized information about their solvency status to all stakeholders.
+4. `verifySolvency()` MUST return both a boolean indicating solvency status and the current health factor (solvency ratio).
 
-External consumers (such as auditors, users, or other smart contracts) can query the protocol's current and historical solvency status using the provided view functions, and can listen for events to receive timely notifications of significant changes or risks. This design ensures that all stakeholders have access to reliable, real-time information about a protocol's financial health, enabling more robust risk management and greater trust in the DeFi ecosystem.
+5. `getSolvencyHistory(startTime, endTime)` MUST return historical data for all recorded snapshots where the timestamp falls within the specified range (inclusive).
+
+### Interface Detection Support
+
+Compliant implementations MUST implement the [ERC-165](./eip-165.md) `supportsInterface` function and MUST return `true` for the `ISolvencyProof` interface ID.
 
 ## Rationale
 
@@ -251,6 +259,28 @@ The standard's design prioritizes:
 2. Efficiency via optimized data structures 
 3. Flexibility through modular design
 4. Transparency via standardized metrics
+
+### Interface Design Philosophy
+
+The `ISolvencyProof` interface provides a standardized, on-chain mechanism for DeFi protocols to report, verify, and monitor their solvency status. This interface is designed to be both comprehensive and flexible, supporting a wide range of protocol architectures and risk management strategies.
+
+**Asset and Liability Management:**
+Authorized oracles update the protocol's asset and liability data using the `updateAssets` and `updateLiabilities` functions. These updates include the list of tokens, their respective amounts, and their current values denominated in ETH. Each update is timestamped, ensuring that all solvency calculations and historical records are based on the most recent and accurate data available. The requirement that all arrays be of equal length and that values be denominated in ETH with 18 decimals ensures consistency and comparability across different implementations.
+
+**Solvency Calculation and Verification:**
+The `getSolvencyRatio` function computes the current solvency ratio, defined as the total value of assets divided by the total value of liabilities, scaled by a factor of 10,000 for precision. The `verifySolvency` function checks whether the protocol meets a minimum required solvency ratio (commonly 105%), returning both a boolean status and the current health factor. This allows both on-chain and off-chain systems to quickly assess the protocol's financial health and respond accordingly.
+
+**Historical Data and Trend Analysis:**
+The `getSolvencyHistory` function enables retrieval of historical solvency metrics, including timestamps, ratios, and the corresponding asset and liability states over a specified time range. This historical data is crucial for reconstructing past events, analyzing risk trends, and providing transparency to stakeholders. This supports audits, regulatory requirements, and trend analysis needs.
+
+**Event Emission and Risk Alerts:**
+Whenever the protocol's financial metrics are updated, the `SolvencyMetricsUpdated` event is emitted, providing real-time data for off-chain monitoring and analytics. When risk thresholds are breached (for example, if the solvency ratio falls below a critical level), the `RiskAlert` event is triggered, signaling the severity and nature of the risk. These events enable automated monitoring systems, auditors, and users to receive timely notifications and take appropriate action.
+
+**Oracle Integration and Security:**
+The interface is designed to be oracle-agnostic, allowing protocols to integrate with a variety of price feed solutions (e.g., Chainlink, API3, custom oracles). The requirement that only authorized oracles can update asset and liability data ensures that updates are secure and resistant to manipulation. The optional `setOracle` and `OracleUpdated` event pattern is recommended for managing oracle permissions and maintaining robust security controls.
+
+**Intended Usage and Integration:**
+Protocols implementing this interface integrate with trusted oracles for price feeds and position updates, maintain up-to-date records of their financial positions, emit standardized events for off-chain monitoring and risk management, and provide transparent, verifiable, and standardized information about their solvency status to all stakeholders. External consumers (such as auditors, users, or other smart contracts) can query the protocol's current and historical solvency status using the provided view functions, and can listen for events to receive timely notifications of significant changes or risks. This design ensures that all stakeholders have access to reliable, real-time information about a protocol's financial health, enabling more robust risk management and greater trust in the DeFi ecosystem.
 
 ### Data Structure Design Rationale
 
@@ -415,7 +445,7 @@ Testing has confirmed that:
 3. State updates maintain consistency
 4. Ratio limits are effective for early detection
 
-![risk-thresholds](./assets/erc-7893/images/diagrams/risk-thresholds.svg)
+![risk-thresholds](https://seanluis.github.io/erc-7893-docs/images/diagrams/risk-thresholds.svg)
 
 ### Risk Assessment Framework
 
@@ -428,7 +458,7 @@ The standard implements a multi-tiered risk assessment system:
 
 2. Threshold Levels:
 
-![threshold-levels](./assets/erc-7893/images/diagrams/threshold-levels.svg)
+![threshold-levels](https://seanluis.github.io/erc-7893-docs/images/diagrams/threshold-levels.svg)
 
 ### Oracle Integration (Optional)
 
@@ -444,7 +474,7 @@ This standard intentionally leaves oracle implementation flexible. Protocols MAY
    - TWAP implementations
    - Medianized price feeds
 
-![oracle-integration](./assets/erc-7893/images/diagrams/oracle-integration.svg)
+![oracle-integration](https://seanluis.github.io/erc-7893-docs/images/diagrams/oracle-integration.svg)
 
 ### Implementation Requirements
 
@@ -495,7 +525,7 @@ Based on conducted tests, it is recommended:
    - Batch updates for multiple tokens
    - Limit array sizes in updates
 
-For more details please visit: [Solvency Proof Implementation](./assets/erc-7893/contracts/SolvencyProof/SolvencyProof.sol)
+For more details please visit: [Solvency Proof Implementation](https://github.com/SeanLuis/erc-7893-docs/blob/main/assets/erc-7893/contracts/SolvencyProof/SolvencyProof.sol)
 
 ## Backwards Compatibility
 
@@ -507,7 +537,7 @@ The reference implementation provides a comprehensive example of the standard in
 
 ### Core Contract Implementation
 
-[SolvencyProof.sol](./assets/erc-7893/contracts/SolvencyProof/SolvencyProof.sol) provides a complete implementation of the `ISolvencyProof` interface with:
+[SolvencyProof.sol](https://github.com/SeanLuis/erc-7893-docs/blob/main/assets/erc-7893/contracts/SolvencyProof/SolvencyProof.sol) provides a complete implementation of the `ISolvencyProof` interface with:
 
 - Full asset and liability tracking functionality
 - Configurable risk thresholds with alert mechanisms
@@ -515,11 +545,11 @@ The reference implementation provides a comprehensive example of the standard in
 - Oracle integration with security controls
 - Comprehensive event emission for off-chain monitoring
 
-This implementation is under license: [MIT](./assets/erc-7893/LICENSE.md)
+This implementation is under license: [MIT](https://github.com/SeanLuis/erc-7893-docs/blob/main/assets/erc-7893/LICENSE.md)
 
 ### Test Suite
 
-[SolvencyProof.test.ts](./assets/erc-7893/tests/SolvencyProof.test.ts) contains an extensive test suite that:
+[SolvencyProof.test.ts](https://github.com/SeanLuis/erc-7893-docs/blob/main/assets/erc-7893/tests/SolvencyProof.test.ts) contains an extensive test suite that:
 
 - Validates mathematical accuracy of solvency calculations
 - Simulates market volatility scenarios including 50% flash crashes
@@ -529,7 +559,7 @@ This implementation is under license: [MIT](./assets/erc-7893/LICENSE.md)
 
 The implementation has been tested across various market conditions and validated to handle extreme volatility while maintaining accurate solvency reporting.
 
-For more information please visit: [Test Case Documentation](./assets/erc-7893/docs/full-test-case.md)
+For more information please visit: [Test Case Documentation](https://seanluis.github.io/erc-7893-docs/docs/full-test-case)
 
 ### Implementation Highlights
 
@@ -616,7 +646,7 @@ Risk threshold monitoring should include graduated alerts (CRITICAL, HIGH_RISK, 
 
 ### Emergency Response Mechanisms
 
-**Circuit Breaker Integration (Following ERC-7265 pattern):**
+**Circuit Breaker Integration (Following circuit breaker pattern):**
 
 Circuit breaker mechanisms should monitor for dramatic value changes and automatically pause operations when thresholds are exceeded. Implementation should include emergency pause states, time-based recovery, and appropriate event emission.
 
@@ -645,7 +675,7 @@ Implementations should enforce reasonable limits on array sizes, historical data
 
 **Liquidation Protection Pattern:**
 
-> **Note:** This is a recommended integration pattern for protocols implementing ERC-7893. The core SolvencyProof contract focuses on solvency monitoring; liquidation logic should be implemented in the consuming protocol.
+> **Note:** This is a recommended integration pattern for protocols implementing this ERC. The core SolvencyProof contract focuses on solvency monitoring; liquidation logic should be implemented in the consuming protocol.
 
 Liquidation integrations should include health factor validation, partial liquidation limits, and slippage protection mechanisms. The reference implementation demonstrates safe liquidation patterns with appropriate safeguards.
 
@@ -682,23 +712,23 @@ These security considerations are based on production implementations from Aave 
 
 All security parameters in the reference implementation have been validated against real-world DeFi protocols:
 
-| Parameter | Value | Real-World Reference | Validation Status |
+| Parameter | Value | Reference | Validation Status |
 |-----------|-------|---------------------|-------------------|
 | **Critical Ratio** | 102% | Aave V3 WBTC liquidation threshold | ✅ Production-tested |
 | **Min Solvency Ratio** | 105% | Compound V3 close factor trigger | ✅ Production-tested |
 | **Warning Ratio** | 110% | MakerDAO emergency shutdown threshold | ✅ Production-tested |
 | **Price Deviation** | 5% | Chainlink deviation standard | ✅ Industry standard |
 | **Staleness Threshold** | 1 hour | Chainlink ETH/USD heartbeat | ✅ Industry standard |
-| **Circuit Breaker** | 20% | NYSE/ERC-7265 standard | ✅ Regulatory compliant |
+| **Circuit Breaker** | 20% | NYSE/circuit breaker standard | ✅ Regulatory compliant |
 | **Rate Limiting** | 5 blocks | ~1 minute (12s avg block time) | ✅ DoS protection |
 | **Gas Optimization** | 50 token max | 30M gas block limit consideration | ✅ Network compliant |
 
-**Security Documentation:** We've documented our security approach thoroughly. Check out the [Security Validation Report](./assets/erc-7893/docs/security-validation-report.md) for detailed parameter validation and the [Fork Testing Guide](./assets/erc-7893/docs/fork-testing-guide.md) for mainnet validation instructions.
+**Security Documentation:** We've documented our security approach thoroughly. Check out the [Security Validation Report](https://seanluis.github.io/erc-7893-docs/docs/security-validation-report) for detailed parameter validation and the [Fork Testing Guide](https://seanluis.github.io/erc-7893-docs/docs/fork-testing-guide) for mainnet validation instructions.
 
-**Test Coverage:** Our test suite includes 23 tests total—13 for core ERC functionality and 10 focused on security features. Every security-critical code path is tested.
+**Test Coverage:** Our test suite includes 23 tests total—13 for core ERC functionality ([SolvencyProof.test.ts](https://github.com/SeanLuis/erc-7893-docs/blob/main/assets/erc-7893/tests/SolvencyProof.test.ts)) and 10 focused on security features ([SecurityFeatures.test.ts](https://github.com/SeanLuis/erc-7893-docs/blob/main/assets/erc-7893/tests/SecurityFeatures.test.ts)). Every security-critical code path is tested.
 
-**Testing Approach:** The `MaliciousOracle.sol` and `MockMultiOracle.sol` contracts simulate attack scenarios and consensus mechanisms for testing purposes. They do not connect to real oracle networks but provide comprehensive coverage of potential attack vectors and edge cases that protocols implementing this ERC should be prepared to handle.
+**Testing Approach:** The [MaliciousOracle.sol](https://github.com/SeanLuis/erc-7893-docs/blob/main/assets/erc-7893/contracts/test/MaliciousOracle.sol) and [MockMultiOracle.sol](https://github.com/SeanLuis/erc-7893-docs/blob/main/assets/erc-7893/contracts/test/MockMultiOracle.sol) contracts simulate attack scenarios and consensus mechanisms for testing purposes. They do not connect to real oracle networks but provide comprehensive coverage of potential attack vectors and edge cases that protocols implementing this ERC should be prepared to handle.
 
 ## Copyright
 
-Copyright and related rights waived via [CC0](./LICENSE.md).
+Copyright and related rights waived via [CC0](https://github.com/SeanLuis/erc-7893-docs/blob/main/LICENSE.md).

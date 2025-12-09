@@ -1,0 +1,20 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const docsEntries = await getCollection('docs');
+  return docsEntries.map(entry => ({
+    params: { slug: entry.slug }, props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+---
+<Layout title={entry.data.title || "Documentation"}>
+    <div class="prose max-w-none">
+        <h1>{entry.data.title}</h1>
+        <Content />
+    </div>
+</Layout>

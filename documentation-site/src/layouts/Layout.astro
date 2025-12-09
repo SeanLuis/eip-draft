@@ -1,0 +1,115 @@
+---
+import '../styles/global.css';
+
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+const currentPath = Astro.url.pathname;
+const base = import.meta.env.BASE_URL;
+
+const isDocs = currentPath.includes('/docs');
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content="ERC-7893 Documentation - DeFi Protocol Solvency Proof" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title} | ERC-7893 Developers</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+	</head>
+	<body class="bg-white text-[#3c4257] antialiased font-sans flex flex-col min-h-screen">
+        <style>
+            body { font-family: 'Inter', sans-serif; }
+        </style>
+
+		<!-- Top Navigation -->
+        <nav class="h-16 border-b border-[#e3e8ee] flex items-center px-6 lg:px-8 bg-white sticky top-0 z-50">
+            <a href={base} class="flex items-center gap-3 font-bold text-[#1a1f36] text-lg tracking-tight mr-8">
+                <div class="w-8 h-8 bg-[#635bff] rounded flex items-center justify-center text-white text-xs font-mono">ERC</div>
+                <span>7893</span>
+            </a>
+            
+            <div class="hidden md:flex items-center space-x-6 text-sm font-medium">
+                <a href={base} class={`transition-colors ${currentPath === base || currentPath === base.slice(0, -1) ? 'text-[#635bff]' : 'text-[#4f566b] hover:text-[#1a1f36]'}`}>Overview</a>
+                <a href={`${base}docs/security-features-documentation`} class={`transition-colors ${isDocs ? 'text-[#635bff]' : 'text-[#4f566b] hover:text-[#1a1f36]'}`}>Documentation</a>
+                <a href="https://github.com/SeanLuis/erc-7893-docs" target="_blank" class="text-[#4f566b] hover:text-[#1a1f36]">GitHub</a>
+            </div>
+
+            <div class="ml-auto flex items-center gap-4">
+               <span class="text-xs font-mono bg-[#f7f9fc] border border-[#e3e8ee] rounded px-2 py-1 text-[#4f566b]">v1.0.0</span>
+            </div>
+        </nav>
+
+		<div class="flex flex-1 max-w-[1440px] mx-auto w-full">
+			<!-- Sidebar (Desktop) -->
+			<aside class="w-64 hidden lg:block border-r border-[#e3e8ee] bg-[#f7f9fc] h-[calc(100vh-64px)] sticky top-16 overflow-y-auto sidebar-scroll">
+				<div class="pt-8 pb-4 px-6">
+                    <div class="mb-8">
+                        <h4 class="text-xs font-bold text-[#4f566b] uppercase tracking-wider mb-3">Getting Started</h4>
+                        <ul class="space-y-1">
+                            <li>
+                                <a href={base} class={`block px-3 py-1.5 text-sm rounded-md transition-colors ${currentPath === base || currentPath === base.slice(0, -1) ? "bg-[#e3e8ee] text-[#1a1f36] font-medium" : "text-[#4f566b] hover:text-[#1a1f36]"}`}>
+                                    Introduction
+                                </a>
+                            </li>
+                            <li>
+                                <a href={`${base}docs/fork-testing-guide`} class={`block px-3 py-1.5 text-sm rounded-md transition-colors ${currentPath.includes("fork-testing-guide") ? "bg-[#e3e8ee] text-[#1a1f36] font-medium" : "text-[#4f566b] hover:text-[#1a1f36]"}`}>
+                                    Integration Guide
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-8">
+                        <h4 class="text-xs font-bold text-[#4f566b] uppercase tracking-wider mb-3">Core Concepts</h4>
+                        <ul class="space-y-1">
+                             <li>
+                                <a href={`${base}docs/security-features-documentation`} class={`block px-3 py-1.5 text-sm rounded-md transition-colors ${currentPath.includes("security-features-documentation") ? "bg-[#e3e8ee] text-[#1a1f36] font-medium" : "text-[#4f566b] hover:text-[#1a1f36]"}`}>
+                                    Security Features
+                                </a>
+                            </li>
+                            <li>
+                                <a href={`${base}docs/security-validation-report`} class={`block px-3 py-1.5 text-sm rounded-md transition-colors ${currentPath.includes("security-validation-report") ? "bg-[#e3e8ee] text-[#1a1f36] font-medium" : "text-[#4f566b] hover:text-[#1a1f36]"}`}>
+                                    Parameters & Validation
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-8">
+                        <h4 class="text-xs font-bold text-[#4f566b] uppercase tracking-wider mb-3">Reference</h4>
+                        <ul class="space-y-1">
+                             <li>
+                                <a href={`${base}docs/full-test-case`} class={`block px-3 py-1.5 text-sm rounded-md transition-colors ${currentPath.includes("full-test-case") ? "bg-[#e3e8ee] text-[#1a1f36] font-medium" : "text-[#4f566b] hover:text-[#1a1f36]"}`}>
+                                    Test Cases
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+				</div>
+			</aside>
+
+			<!-- Main Content -->
+			<main class="flex-1 min-w-0 bg-white">
+				<div class="max-w-4xl mx-auto px-6 py-12 lg:px-12">
+					<article class="prose max-w-none">
+						<slot />
+					</article>
+                    
+                    <footer class="mt-20 pt-8 border-t border-[#e3e8ee] flex justify-between text-sm text-[#4f566b]">
+                        <p>&copy; 2025 ERC-7893 Standard. Open Source.</p>
+                        <a href="#" class="hover:text-[#635bff]">Back to top</a>
+                    </footer>
+				</div>
+			</main>
+		</div>
+	</body>
+</html>
