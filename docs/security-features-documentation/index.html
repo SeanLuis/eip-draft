@@ -1,0 +1,169 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-sckkx6r4> <head><meta charset="UTF-8"><meta name="description" content="ERC-7893 Documentation - DeFi Protocol Solvency Proof"><meta name="viewport" content="width=device-width"><link rel="icon" type="image/svg+xml" href="/eip-draftfavicon.svg"><meta name="generator" content="Astro v4.16.19"><title>Security Features Documentation | ERC-7893 Developers</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/eip-draft/_assets/_slug_.mvnVdxJJ.css"></head> <body class="bg-white text-[#3c4257] antialiased font-sans flex flex-col min-h-screen" data-astro-cid-sckkx6r4>  <!-- Top Navigation --> <nav class="h-16 border-b border-[#e3e8ee] flex items-center px-6 lg:px-8 bg-white sticky top-0 z-50" data-astro-cid-sckkx6r4> <a href="/eip-draft" class="flex items-center gap-3 font-bold text-[#1a1f36] text-lg tracking-tight mr-8" data-astro-cid-sckkx6r4> <div class="w-8 h-8 bg-[#635bff] rounded flex items-center justify-center text-white text-xs font-mono" data-astro-cid-sckkx6r4>ERC</div> <span data-astro-cid-sckkx6r4>7893</span> </a> <div class="hidden md:flex items-center space-x-6 text-sm font-medium" data-astro-cid-sckkx6r4> <a href="/eip-draft" class="transition-colors text-[#4f566b] hover:text-[#1a1f36]" data-astro-cid-sckkx6r4>Overview</a> <a href="/eip-draftdocs/security-features-documentation" class="transition-colors text-[#635bff]" data-astro-cid-sckkx6r4>Documentation</a> <a href="https://github.com/SeanLuis/eip-draft" target="_blank" class="text-[#4f566b] hover:text-[#1a1f36]" data-astro-cid-sckkx6r4>GitHub</a> </div> <div class="ml-auto flex items-center gap-4" data-astro-cid-sckkx6r4> <span class="text-xs font-mono bg-[#f7f9fc] border border-[#e3e8ee] rounded px-2 py-1 text-[#4f566b]" data-astro-cid-sckkx6r4>v1.0.0</span> </div> </nav> <div class="flex flex-1 max-w-[1440px] mx-auto w-full" data-astro-cid-sckkx6r4> <!-- Sidebar (Desktop) --> <aside class="w-64 hidden lg:block border-r border-[#e3e8ee] bg-[#f7f9fc] h-[calc(100vh-64px)] sticky top-16 overflow-y-auto sidebar-scroll" data-astro-cid-sckkx6r4> <div class="pt-8 pb-4 px-6" data-astro-cid-sckkx6r4> <div class="mb-8" data-astro-cid-sckkx6r4> <h4 class="text-xs font-bold text-[#4f566b] uppercase tracking-wider mb-3" data-astro-cid-sckkx6r4>Getting Started</h4> <ul class="space-y-1" data-astro-cid-sckkx6r4> <li data-astro-cid-sckkx6r4> <a href="/eip-draft" class="block px-3 py-1.5 text-sm rounded-md transition-colors text-[#4f566b] hover:text-[#1a1f36]" data-astro-cid-sckkx6r4>
+Introduction
+</a> </li> <li data-astro-cid-sckkx6r4> <a href="/eip-draftdocs/fork-testing-guide" class="block px-3 py-1.5 text-sm rounded-md transition-colors text-[#4f566b] hover:text-[#1a1f36]" data-astro-cid-sckkx6r4>
+Integration Guide
+</a> </li> </ul> </div> <div class="mb-8" data-astro-cid-sckkx6r4> <h4 class="text-xs font-bold text-[#4f566b] uppercase tracking-wider mb-3" data-astro-cid-sckkx6r4>Core Concepts</h4> <ul class="space-y-1" data-astro-cid-sckkx6r4> <li data-astro-cid-sckkx6r4> <a href="/eip-draftdocs/security-features-documentation" class="block px-3 py-1.5 text-sm rounded-md transition-colors bg-[#e3e8ee] text-[#1a1f36] font-medium" data-astro-cid-sckkx6r4>
+Security Features
+</a> </li> <li data-astro-cid-sckkx6r4> <a href="/eip-draftdocs/security-validation-report" class="block px-3 py-1.5 text-sm rounded-md transition-colors text-[#4f566b] hover:text-[#1a1f36]" data-astro-cid-sckkx6r4>
+Parameters & Validation
+</a> </li> </ul> </div> <div class="mb-8" data-astro-cid-sckkx6r4> <h4 class="text-xs font-bold text-[#4f566b] uppercase tracking-wider mb-3" data-astro-cid-sckkx6r4>Reference</h4> <ul class="space-y-1" data-astro-cid-sckkx6r4> <li data-astro-cid-sckkx6r4> <a href="/eip-draftdocs/full-test-case" class="block px-3 py-1.5 text-sm rounded-md transition-colors text-[#4f566b] hover:text-[#1a1f36]" data-astro-cid-sckkx6r4>
+Test Cases
+</a> </li> </ul> </div> </div> </aside> <!-- Main Content --> <main class="flex-1 min-w-0 bg-white" data-astro-cid-sckkx6r4> <div class="max-w-4xl mx-auto px-6 py-12 lg:px-12" data-astro-cid-sckkx6r4> <article class="prose max-w-none" data-astro-cid-sckkx6r4>  <div class="prose max-w-none"> <h1>Security Features Documentation</h1> <h1 id="security-features-test-documentation">Security Features Test Documentation</h1>
+<h2 id="overview">Overview</h2>
+<p>This document describes the comprehensive security test suite for ERC-7893, demonstrating how users can protect themselves using the implemented security features.</p>
+<h2 id="test-categories">Test Categories</h2>
+<h3 id="-rate-limiting-protection">🔒 Rate Limiting Protection</h3>
+<p><strong>Purpose:</strong> Prevents spam attacks with 5-block cooldown between oracle updates.</p>
+<p><strong>Test scenario:</strong></p>
+<ul>
+<li>First update succeeds normally</li>
+<li>Immediate second update fails with “Update too frequent”</li>
+<li>After 6 blocks, normal operation resumes</li>
+</ul>
+<p><strong>Real-world protection:</strong> Prevents DoS attacks while allowing legitimate operations.</p>
+<h3 id="-access-control-validation">🔒 Access Control Validation</h3>
+<p><strong>Purpose:</strong> Role-based permissions using OpenZeppelin AccessControl.</p>
+<p><strong>Test scenario:</strong></p>
+<ul>
+<li>Unauthorized users cannot update data</li>
+<li>Only authorized oracles have ORACLE_ROLE</li>
+<li>Only admins can authorize new oracles</li>
+</ul>
+<p><strong>Real-world protection:</strong> Prevents unauthorized data manipulation.</p>
+<h3 id="-circuit-breaker-protection">🔒 Circuit Breaker Protection</h3>
+<p><strong>Purpose:</strong> Automatic pause when asset values change >20% in one update.</p>
+<p><strong>Test scenario:</strong></p>
+<ul>
+<li>Normal state operations work fine</li>
+<li>30% price drop triggers circuit breaker</li>
+<li>System automatically pauses for protection</li>
+</ul>
+<p><strong>Real-world protection:</strong> Guards against market manipulation and flash crashes.</p>
+<h3 id="-emergency-control-system">🔒 Emergency Control System</h3>
+<p><strong>Purpose:</strong> Guardian-controlled emergency pause capabilities.</p>
+<p><strong>Test scenario:</strong></p>
+<ul>
+<li>Only authorized guardian can trigger pause</li>
+<li>All operations blocked during emergency</li>
+<li>Guardian can restore operations</li>
+</ul>
+<p><strong>Real-world protection:</strong> Rapid response to critical situations.</p>
+<h3 id="-dos-attack-prevention">🔒 DoS Attack Prevention</h3>
+<p><strong>Purpose:</strong> Input validation and bounded operations.</p>
+<p><strong>Test scenario:</strong></p>
+<ul>
+<li>Updates with >50 tokens rejected</li>
+<li>Array length mismatches caught</li>
+<li>Gas consumption stays bounded</li>
+</ul>
+<p><strong>Real-world protection:</strong> Prevents out-of-gas attacks and resource exhaustion.</p>
+<h3 id="-critical-solvency-monitoring">🔒 Critical Solvency Monitoring</h3>
+<p><strong>Purpose:</strong> Auto-protection when solvency becomes dangerous.</p>
+<p><strong>Test scenario:</strong></p>
+<ul>
+<li>System monitors ratio continuously</li>
+<li>Critical alerts below 102% threshold</li>
+<li>Automatic pause at dangerous levels</li>
+</ul>
+<p><strong>Real-world protection:</strong> Prevents protocol insolvency.</p>
+<h3 id="-oracle-staleness-detection">🔒 Oracle Staleness Detection</h3>
+<p><strong>Purpose:</strong> Flags data older than 1 hour.</p>
+<p><strong>Test scenario:</strong></p>
+<ul>
+<li>Fresh data correctly identified</li>
+<li>Stale data (>1 hour) flagged</li>
+<li>Transparency about data freshness</li>
+</ul>
+<p><strong>Real-world protection:</strong> Prevents decisions based on outdated information.</p>
+<h3 id="-multi-oracle-consensus">🔒 Multi-Oracle Consensus</h3>
+<p><strong>Purpose:</strong> Price validation across multiple sources.</p>
+<p><strong>Test scenario:</strong></p>
+<ul>
+<li>Consensus when oracles agree (within 5%)</li>
+<li>Consensus fails during manipulation attempts</li>
+<li>Resistant to single-oracle attacks</li>
+</ul>
+<p><strong>Real-world protection:</strong> Guards against oracle manipulation.</p>
+<h2 id="security-parameters-production-validated">Security Parameters (Production-Validated)</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Parameter</th><th>Value</th><th>Real-World Reference</th><th>Status</th></tr></thead><tbody><tr><td>Critical Ratio</td><td>102%</td><td>Aave V3 WBTC threshold</td><td>✅ Validated</td></tr><tr><td>Min Solvency</td><td>105%</td><td>Compound V3 close factor</td><td>✅ Validated</td></tr><tr><td>Price Deviation</td><td>5%</td><td>Chainlink standard</td><td>✅ Validated</td></tr><tr><td>Circuit Breaker</td><td>20%</td><td>NYSE/ERC-7265</td><td>✅ Validated</td></tr><tr><td>Rate Limiting</td><td>5 blocks</td><td>~1 min cooldown</td><td>✅ Validated</td></tr><tr><td>Max Tokens</td><td>50</td><td>Gas limit optimization</td><td>✅ Validated</td></tr></tbody></table>
+<h2 id="user-protection-summary">User Protection Summary</h2>
+<p>Users are protected against:</p>
+<ul>
+<li>✅ Oracle manipulation attacks</li>
+<li>✅ Spam/DoS attacks</li>
+<li>✅ Market manipulation</li>
+<li>✅ Unauthorized access</li>
+<li>✅ Critical solvency situations</li>
+<li>✅ Stale data usage</li>
+<li>✅ Unbounded gas consumption</li>
+</ul>
+<h2 id="running-the-tests">Running the Tests</h2>
+<p>To execute these security tests in a development environment:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6A737D"># Install dependencies</span></span>
+<span class="line"><span style="color:#B392F0">npm</span><span style="color:#9ECBFF"> install</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D"># Compile contracts</span></span>
+<span class="line"><span style="color:#B392F0">npx</span><span style="color:#9ECBFF"> hardhat</span><span style="color:#9ECBFF"> compile</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D"># Run security tests</span></span>
+<span class="line"><span style="color:#B392F0">npx</span><span style="color:#9ECBFF"> hardhat</span><span style="color:#9ECBFF"> test</span><span style="color:#9ECBFF"> test/SecurityFeatures.test.ts</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D"># Run all tests</span></span>
+<span class="line"><span style="color:#B392F0">npx</span><span style="color:#9ECBFF"> hardhat</span><span style="color:#9ECBFF"> test</span></span>
+<span class="line"></span></code></pre>
+<p>The tests demonstrate real protection scenarios and validate that all security mechanisms work as intended for production use.</p>
+<h2 id="security-test-results">Security Test Results</h2>
+<h3 id="security-features-status-summary">Security Features Status Summary</h3>
+<p><img src="/images/test-results/security-features-summary.png" alt="Security Features Summary"></p>
+<p><em>Real-time security features status showing all 8 protection mechanisms active and operational, including access control, rate limiting, DoS protection, circuit breaker, emergency controls, oracle staleness detection, price validation, and historical data management.</em></p>
+<h3 id="security-parameters-configuration">Security Parameters Configuration</h3>
+<p><img src="/images/test-results/security-parameters-table.png" alt="Security Parameters Table"></p>
+<p><em>Production-validated security parameters with their real-world values: 5% max price deviation, 50 token limit, 1-hour staleness threshold, 20% circuit breaker, and 5-block rate limiting for optimal protection.</em></p>
+<p>These screenshots demonstrate that all security features are properly implemented and working together to provide comprehensive protection for users of the ERC-7893 standard.</p> </div>  </article> <footer class="mt-20 pt-8 border-t border-[#e3e8ee] flex justify-between text-sm text-[#4f566b]" data-astro-cid-sckkx6r4> <p data-astro-cid-sckkx6r4>&copy; 2025 ERC-7893 Standard. Open Source.</p> <a href="#" class="hover:text-[#635bff]" data-astro-cid-sckkx6r4>Back to top</a> </footer> </div> </main> </div> </body></html>

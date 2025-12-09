@@ -1,0 +1,101 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-sckkx6r4> <head><meta charset="UTF-8"><meta name="description" content="ERC-7893 Documentation - DeFi Protocol Solvency Proof"><meta name="viewport" content="width=device-width"><link rel="icon" type="image/svg+xml" href="/eip-draftfavicon.svg"><meta name="generator" content="Astro v4.16.19"><title>Fork Testing Guide | ERC-7893 Developers</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/eip-draft/_assets/_slug_.mvnVdxJJ.css"></head> <body class="bg-white text-[#3c4257] antialiased font-sans flex flex-col min-h-screen" data-astro-cid-sckkx6r4>  <!-- Top Navigation --> <nav class="h-16 border-b border-[#e3e8ee] flex items-center px-6 lg:px-8 bg-white sticky top-0 z-50" data-astro-cid-sckkx6r4> <a href="/eip-draft" class="flex items-center gap-3 font-bold text-[#1a1f36] text-lg tracking-tight mr-8" data-astro-cid-sckkx6r4> <div class="w-8 h-8 bg-[#635bff] rounded flex items-center justify-center text-white text-xs font-mono" data-astro-cid-sckkx6r4>ERC</div> <span data-astro-cid-sckkx6r4>7893</span> </a> <div class="hidden md:flex items-center space-x-6 text-sm font-medium" data-astro-cid-sckkx6r4> <a href="/eip-draft" class="transition-colors text-[#4f566b] hover:text-[#1a1f36]" data-astro-cid-sckkx6r4>Overview</a> <a href="/eip-draftdocs/security-features-documentation" class="transition-colors text-[#635bff]" data-astro-cid-sckkx6r4>Documentation</a> <a href="https://github.com/SeanLuis/eip-draft" target="_blank" class="text-[#4f566b] hover:text-[#1a1f36]" data-astro-cid-sckkx6r4>GitHub</a> </div> <div class="ml-auto flex items-center gap-4" data-astro-cid-sckkx6r4> <span class="text-xs font-mono bg-[#f7f9fc] border border-[#e3e8ee] rounded px-2 py-1 text-[#4f566b]" data-astro-cid-sckkx6r4>v1.0.0</span> </div> </nav> <div class="flex flex-1 max-w-[1440px] mx-auto w-full" data-astro-cid-sckkx6r4> <!-- Sidebar (Desktop) --> <aside class="w-64 hidden lg:block border-r border-[#e3e8ee] bg-[#f7f9fc] h-[calc(100vh-64px)] sticky top-16 overflow-y-auto sidebar-scroll" data-astro-cid-sckkx6r4> <div class="pt-8 pb-4 px-6" data-astro-cid-sckkx6r4> <div class="mb-8" data-astro-cid-sckkx6r4> <h4 class="text-xs font-bold text-[#4f566b] uppercase tracking-wider mb-3" data-astro-cid-sckkx6r4>Getting Started</h4> <ul class="space-y-1" data-astro-cid-sckkx6r4> <li data-astro-cid-sckkx6r4> <a href="/eip-draft" class="block px-3 py-1.5 text-sm rounded-md transition-colors text-[#4f566b] hover:text-[#1a1f36]" data-astro-cid-sckkx6r4>
+Introduction
+</a> </li> <li data-astro-cid-sckkx6r4> <a href="/eip-draftdocs/fork-testing-guide" class="block px-3 py-1.5 text-sm rounded-md transition-colors bg-[#e3e8ee] text-[#1a1f36] font-medium" data-astro-cid-sckkx6r4>
+Integration Guide
+</a> </li> </ul> </div> <div class="mb-8" data-astro-cid-sckkx6r4> <h4 class="text-xs font-bold text-[#4f566b] uppercase tracking-wider mb-3" data-astro-cid-sckkx6r4>Core Concepts</h4> <ul class="space-y-1" data-astro-cid-sckkx6r4> <li data-astro-cid-sckkx6r4> <a href="/eip-draftdocs/security-features-documentation" class="block px-3 py-1.5 text-sm rounded-md transition-colors text-[#4f566b] hover:text-[#1a1f36]" data-astro-cid-sckkx6r4>
+Security Features
+</a> </li> <li data-astro-cid-sckkx6r4> <a href="/eip-draftdocs/security-validation-report" class="block px-3 py-1.5 text-sm rounded-md transition-colors text-[#4f566b] hover:text-[#1a1f36]" data-astro-cid-sckkx6r4>
+Parameters & Validation
+</a> </li> </ul> </div> <div class="mb-8" data-astro-cid-sckkx6r4> <h4 class="text-xs font-bold text-[#4f566b] uppercase tracking-wider mb-3" data-astro-cid-sckkx6r4>Reference</h4> <ul class="space-y-1" data-astro-cid-sckkx6r4> <li data-astro-cid-sckkx6r4> <a href="/eip-draftdocs/full-test-case" class="block px-3 py-1.5 text-sm rounded-md transition-colors text-[#4f566b] hover:text-[#1a1f36]" data-astro-cid-sckkx6r4>
+Test Cases
+</a> </li> </ul> </div> </div> </aside> <!-- Main Content --> <main class="flex-1 min-w-0 bg-white" data-astro-cid-sckkx6r4> <div class="max-w-4xl mx-auto px-6 py-12 lg:px-12" data-astro-cid-sckkx6r4> <article class="prose max-w-none" data-astro-cid-sckkx6r4>  <div class="prose max-w-none"> <h1>Fork Testing Guide</h1> <h1 id="fork-testing-guide-for-erc-7893">Fork Testing Guide for ERC-7893</h1>
+<p>This guide explains how to test the ERC-7893 implementation against real mainnet protocols using Hardhat’s fork functionality.</p>
+<h2 id="environment-setup">Environment Setup</h2>
+<p>Create a <code>.env</code> file in your project root:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6A737D"># Fork Testing Configuration</span></span>
+<span class="line"><span style="color:#E1E4E8">FORK_MAINNET</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">false</span></span>
+<span class="line"><span style="color:#E1E4E8">MAINNET_RPC_URL</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">https://ethereum.publicnode.com</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D"># Gas Reporting</span></span>
+<span class="line"><span style="color:#E1E4E8">REPORT_GAS</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">false</span></span>
+<span class="line"></span></code></pre>
+<h2 id="running-fork-tests">Running Fork Tests</h2>
+<h3 id="basic-fork-testing">Basic Fork Testing</h3>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6A737D"># Enable mainnet fork</span></span>
+<span class="line"><span style="color:#E1E4E8">FORK_MAINNET</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">true</span><span style="color:#B392F0"> npx</span><span style="color:#9ECBFF"> hardhat</span><span style="color:#9ECBFF"> test</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D"># Run with gas reporting</span></span>
+<span class="line"><span style="color:#E1E4E8">FORK_MAINNET</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">true</span><span style="color:#E1E4E8"> REPORT_GAS</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">true</span><span style="color:#B392F0"> npx</span><span style="color:#9ECBFF"> hardhat</span><span style="color:#9ECBFF"> test</span></span>
+<span class="line"></span></code></pre>
+<h3 id="protocol-specific-testing">Protocol-Specific Testing</h3>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6A737D"># Test against Aave V3 (includes Chainlink oracle validation)</span></span>
+<span class="line"><span style="color:#E1E4E8">FORK_MAINNET</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">true</span><span style="color:#B392F0"> npx</span><span style="color:#9ECBFF"> hardhat</span><span style="color:#9ECBFF"> test</span><span style="color:#9ECBFF"> test/AaveIntegration.test.ts</span></span>
+<span class="line"></span></code></pre>
+<h2 id="production-protocol-addresses">Production Protocol Addresses</h2>
+<p>When testing against mainnet fork, use these verified addresses:</p>
+<h3 id="aave-v3">Aave V3</h3>
+<ul>
+<li><strong>Pool</strong>: <code>0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2</code></li>
+<li><strong>PoolDataProvider</strong>: <code>0x7B4EB56E7CD4b454BA8ff71E4518426369a138a3</code></li>
+<li><strong>WETH Gateway</strong>: <code>0x893411580e590D62dDBca8a703d61Cc4A8c7b2b9</code></li>
+</ul>
+<h3 id="chainlink-oracles">Chainlink Oracles</h3>
+<ul>
+<li><strong>ETH/USD</strong>: <code>0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419</code></li>
+<li><strong>BTC/USD</strong>: <code>0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c</code></li>
+<li><strong>USDC/USD</strong>: <code>0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6</code></li>
+</ul>
+<h2 id="expected-validation-results">Expected Validation Results</h2>
+<p>Fork testing should demonstrate:</p>
+<ol>
+<li><strong>Gas Efficiency</strong>: Operations consume less gas than equivalent protocol functions</li>
+<li><strong>Parameter Accuracy</strong>: Security thresholds align with production protocols</li>
+<li><strong>Oracle Integration</strong>: Real Chainlink feeds work correctly with consensus mechanisms</li>
+<li><strong>Circuit Breakers</strong>: Respond appropriately to historical market volatility events</li>
+</ol>
+<h2 id="sample-fork-test-structure">Sample Fork Test Structure</h2>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="typescript"><code><span class="line"><span style="color:#B392F0">describe</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">"🔗 REAL Aave V3 + Chainlink Integration"</span><span style="color:#E1E4E8">, </span><span style="color:#F97583">function</span><span style="color:#E1E4E8">() {</span></span>
+<span class="line"><span style="color:#B392F0">  before</span><span style="color:#E1E4E8">(</span><span style="color:#F97583">async</span><span style="color:#F97583"> function</span><span style="color:#E1E4E8">() {</span></span>
+<span class="line"><span style="color:#6A737D">    // Skip if not fork testing</span></span>
+<span class="line"><span style="color:#F97583">    if</span><span style="color:#E1E4E8"> (</span><span style="color:#F97583">!</span><span style="color:#E1E4E8">process.env.</span><span style="color:#79B8FF">FORK_MAINNET</span><span style="color:#E1E4E8">) </span><span style="color:#79B8FF">this</span><span style="color:#E1E4E8">.</span><span style="color:#B392F0">skip</span><span style="color:#E1E4E8">();</span></span>
+<span class="line"><span style="color:#E1E4E8">  });</span></span>
+<span class="line"><span style="color:#E1E4E8">  </span></span>
+<span class="line"><span style="color:#B392F0">  it</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">"Should validate against Aave V3 liquidation thresholds"</span><span style="color:#E1E4E8">, </span><span style="color:#F97583">async</span><span style="color:#F97583"> function</span><span style="color:#E1E4E8">() {</span></span>
+<span class="line"><span style="color:#F97583">    const</span><span style="color:#79B8FF"> aaveDataProvider</span><span style="color:#F97583"> =</span><span style="color:#F97583"> await</span><span style="color:#E1E4E8"> ethers.</span><span style="color:#B392F0">getContractAt</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">"IAaveDataProvider"</span><span style="color:#E1E4E8">, </span><span style="color:#79B8FF">AAVE_V3_DATA_PROVIDER</span><span style="color:#E1E4E8">);</span></span>
+<span class="line"><span style="color:#F97583">    const</span><span style="color:#79B8FF"> aaveConfig</span><span style="color:#F97583"> =</span><span style="color:#F97583"> await</span><span style="color:#E1E4E8"> aaveDataProvider.</span><span style="color:#B392F0">getReserveConfigurationData</span><span style="color:#E1E4E8">(</span><span style="color:#79B8FF">WETH</span><span style="color:#E1E4E8">);</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span></span>
+<span class="line"><span style="color:#6A737D">    // Compare our parameters with Aave's configuration</span></span>
+<span class="line"><span style="color:#F97583">    const</span><span style="color:#E1E4E8"> [</span><span style="color:#79B8FF">decimals</span><span style="color:#E1E4E8">, </span><span style="color:#79B8FF">ltv</span><span style="color:#E1E4E8">, </span><span style="color:#79B8FF">liquidationThreshold</span><span style="color:#E1E4E8">, </span><span style="color:#79B8FF">liquidationBonus</span><span style="color:#E1E4E8">] </span><span style="color:#F97583">=</span><span style="color:#E1E4E8"> aaveConfig;</span></span>
+<span class="line"><span style="color:#F97583">    const</span><span style="color:#79B8FF"> yourConfig</span><span style="color:#F97583"> =</span><span style="color:#F97583"> await</span><span style="color:#E1E4E8"> solvencyProof.</span><span style="color:#B392F0">liquidationConfigs</span><span style="color:#E1E4E8">(</span><span style="color:#F97583">await</span><span style="color:#E1E4E8"> solvencyProof.</span><span style="color:#B392F0">getAddress</span><span style="color:#E1E4E8">());</span></span>
+<span class="line"><span style="color:#E1E4E8">    </span></span>
+<span class="line"><span style="color:#B392F0">    expect</span><span style="color:#E1E4E8">(</span><span style="color:#B392F0">Number</span><span style="color:#E1E4E8">(yourConfig.minHealthFactor)).to.be.</span><span style="color:#B392F0">gt</span><span style="color:#E1E4E8">(</span><span style="color:#B392F0">Number</span><span style="color:#E1E4E8">(liquidationThreshold));</span></span>
+<span class="line"><span style="color:#E1E4E8">  });</span></span>
+<span class="line"><span style="color:#E1E4E8">});</span></span>
+<span class="line"></span></code></pre>
+<h2 id="gas-benchmarking">Gas Benchmarking</h2>
+<p>Fork testing enables accurate gas benchmarking against production protocols:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="typescript"><code><span class="line"><span style="color:#B392F0">it</span><span style="color:#E1E4E8">(</span><span style="color:#9ECBFF">"Should consume less gas than Aave liquidation"</span><span style="color:#E1E4E8">, </span><span style="color:#F97583">async</span><span style="color:#F97583"> function</span><span style="color:#E1E4E8">() {</span></span>
+<span class="line"><span style="color:#F97583">  const</span><span style="color:#79B8FF"> gasUsed</span><span style="color:#F97583"> =</span><span style="color:#F97583"> await</span><span style="color:#E1E4E8"> solvencyProof.updateAssets.</span><span style="color:#B392F0">estimateGas</span><span style="color:#E1E4E8">(tokens, amounts, values);</span></span>
+<span class="line"><span style="color:#F97583">  const</span><span style="color:#79B8FF"> aaveLiquidationGas</span><span style="color:#F97583"> =</span><span style="color:#79B8FF"> 400000</span><span style="color:#E1E4E8">; </span><span style="color:#6A737D">// Known Aave V3 liquidation gas cost</span></span>
+<span class="line"><span style="color:#E1E4E8">  </span></span>
+<span class="line"><span style="color:#B392F0">  expect</span><span style="color:#E1E4E8">(gasUsed).to.be.</span><span style="color:#B392F0">lessThan</span><span style="color:#E1E4E8">(aaveLiquidationGas);</span></span>
+<span class="line"><span style="color:#E1E4E8">});</span></span>
+<span class="line"></span></code></pre>
+<p>This comprehensive testing approach ensures the ERC-7893 implementation meets production-grade requirements and performs competitively against established DeFi protocols.</p>
+<h2 id="fork-testing-results">Fork Testing Results</h2>
+<h3 id="aave-v3-integration-validation">Aave V3 Integration Validation</h3>
+<p><img src="/images/test-results/aave-integration-comparison.png" alt="Aave Integration Comparison"></p>
+<p><em>Configuration comparison between Aave V3 WETH parameters and ERC-7893 implementation showing proper alignment of liquidation thresholds, bonuses, and health factors.</em></p>
+<p><img src="/images/test-results/aave-parameter-alignment.png" alt="Aave Parameter Alignment"></p>
+<p><em>Parameter alignment summary demonstrating that ERC-7893’s minimum health factor (110%) provides an appropriate safety buffer above Aave’s liquidation threshold (83%), with a 27% safety margin.</em></p>
+<h3 id="chainlink-oracle-integration">Chainlink Oracle Integration</h3>
+<p><img src="/images/test-results/chainlink-price-data.png" alt="Chainlink Price Data"></p>
+<p><em>Real Chainlink price feeds from mainnet fork showing ETH/USD at $1,834.80 and BTC/USD at $34,727.83 with 100% confidence scores and fresh data status.</em></p>
+<p><img src="/images/test-results/price-validation-criteria.png" alt="Price Validation Criteria"></p>
+<p><em>Price validation criteria and results showing successful validation of ETH ($1,000-$5,000 range) and BTC ($20,000-$100,000 range) with >80% confidence requirements met.</em></p>
+<h3 id="market-analysis-and-circuit-breakers">Market Analysis and Circuit Breakers</h3>
+<p><img src="/images/test-results/market-analysis-volatility.png" alt="Market Analysis"></p>
+<p><em>Real ETH market analysis showing current price ($1,834.80), 0% volatility, stable trend, 10 history points, 0.17% price change, and normal circuit breaker status.</em></p>
+<p><img src="/images/test-results/circuit-breaker-analysis.png" alt="Circuit Breaker Analysis"></p>
+<p><em>Circuit breaker analysis showing all metrics within normal limits: price change (0.17% vs 20% threshold), volatility (0% vs 15% threshold), sufficient historical data (10 points), and normal market conditions resulting in no action required.</em></p>
+<p>These results demonstrate successful integration with real mainnet protocols and validate that ERC-7893 parameters are realistic and properly calibrated against industry standards.</p> </div>  </article> <footer class="mt-20 pt-8 border-t border-[#e3e8ee] flex justify-between text-sm text-[#4f566b]" data-astro-cid-sckkx6r4> <p data-astro-cid-sckkx6r4>&copy; 2025 ERC-7893 Standard. Open Source.</p> <a href="#" class="hover:text-[#635bff]" data-astro-cid-sckkx6r4>Back to top</a> </footer> </div> </main> </div> </body></html>

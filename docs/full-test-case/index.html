@@ -1,0 +1,430 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-sckkx6r4> <head><meta charset="UTF-8"><meta name="description" content="ERC-7893 Documentation - DeFi Protocol Solvency Proof"><meta name="viewport" content="width=device-width"><link rel="icon" type="image/svg+xml" href="/eip-draftfavicon.svg"><meta name="generator" content="Astro v4.16.19"><title>Full Test Case | ERC-7893 Developers</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="/eip-draft/_assets/_slug_.mvnVdxJJ.css"></head> <body class="bg-white text-[#3c4257] antialiased font-sans flex flex-col min-h-screen" data-astro-cid-sckkx6r4>  <!-- Top Navigation --> <nav class="h-16 border-b border-[#e3e8ee] flex items-center px-6 lg:px-8 bg-white sticky top-0 z-50" data-astro-cid-sckkx6r4> <a href="/eip-draft" class="flex items-center gap-3 font-bold text-[#1a1f36] text-lg tracking-tight mr-8" data-astro-cid-sckkx6r4> <div class="w-8 h-8 bg-[#635bff] rounded flex items-center justify-center text-white text-xs font-mono" data-astro-cid-sckkx6r4>ERC</div> <span data-astro-cid-sckkx6r4>7893</span> </a> <div class="hidden md:flex items-center space-x-6 text-sm font-medium" data-astro-cid-sckkx6r4> <a href="/eip-draft" class="transition-colors text-[#4f566b] hover:text-[#1a1f36]" data-astro-cid-sckkx6r4>Overview</a> <a href="/eip-draftdocs/security-features-documentation" class="transition-colors text-[#635bff]" data-astro-cid-sckkx6r4>Documentation</a> <a href="https://github.com/SeanLuis/eip-draft" target="_blank" class="text-[#4f566b] hover:text-[#1a1f36]" data-astro-cid-sckkx6r4>GitHub</a> </div> <div class="ml-auto flex items-center gap-4" data-astro-cid-sckkx6r4> <span class="text-xs font-mono bg-[#f7f9fc] border border-[#e3e8ee] rounded px-2 py-1 text-[#4f566b]" data-astro-cid-sckkx6r4>v1.0.0</span> </div> </nav> <div class="flex flex-1 max-w-[1440px] mx-auto w-full" data-astro-cid-sckkx6r4> <!-- Sidebar (Desktop) --> <aside class="w-64 hidden lg:block border-r border-[#e3e8ee] bg-[#f7f9fc] h-[calc(100vh-64px)] sticky top-16 overflow-y-auto sidebar-scroll" data-astro-cid-sckkx6r4> <div class="pt-8 pb-4 px-6" data-astro-cid-sckkx6r4> <div class="mb-8" data-astro-cid-sckkx6r4> <h4 class="text-xs font-bold text-[#4f566b] uppercase tracking-wider mb-3" data-astro-cid-sckkx6r4>Getting Started</h4> <ul class="space-y-1" data-astro-cid-sckkx6r4> <li data-astro-cid-sckkx6r4> <a href="/eip-draft" class="block px-3 py-1.5 text-sm rounded-md transition-colors text-[#4f566b] hover:text-[#1a1f36]" data-astro-cid-sckkx6r4>
+Introduction
+</a> </li> <li data-astro-cid-sckkx6r4> <a href="/eip-draftdocs/fork-testing-guide" class="block px-3 py-1.5 text-sm rounded-md transition-colors text-[#4f566b] hover:text-[#1a1f36]" data-astro-cid-sckkx6r4>
+Integration Guide
+</a> </li> </ul> </div> <div class="mb-8" data-astro-cid-sckkx6r4> <h4 class="text-xs font-bold text-[#4f566b] uppercase tracking-wider mb-3" data-astro-cid-sckkx6r4>Core Concepts</h4> <ul class="space-y-1" data-astro-cid-sckkx6r4> <li data-astro-cid-sckkx6r4> <a href="/eip-draftdocs/security-features-documentation" class="block px-3 py-1.5 text-sm rounded-md transition-colors text-[#4f566b] hover:text-[#1a1f36]" data-astro-cid-sckkx6r4>
+Security Features
+</a> </li> <li data-astro-cid-sckkx6r4> <a href="/eip-draftdocs/security-validation-report" class="block px-3 py-1.5 text-sm rounded-md transition-colors text-[#4f566b] hover:text-[#1a1f36]" data-astro-cid-sckkx6r4>
+Parameters & Validation
+</a> </li> </ul> </div> <div class="mb-8" data-astro-cid-sckkx6r4> <h4 class="text-xs font-bold text-[#4f566b] uppercase tracking-wider mb-3" data-astro-cid-sckkx6r4>Reference</h4> <ul class="space-y-1" data-astro-cid-sckkx6r4> <li data-astro-cid-sckkx6r4> <a href="/eip-draftdocs/full-test-case" class="block px-3 py-1.5 text-sm rounded-md transition-colors bg-[#e3e8ee] text-[#1a1f36] font-medium" data-astro-cid-sckkx6r4>
+Test Cases
+</a> </li> </ul> </div> </div> </aside> <!-- Main Content --> <main class="flex-1 min-w-0 bg-white" data-astro-cid-sckkx6r4> <div class="max-w-4xl mx-auto px-6 py-12 lg:px-12" data-astro-cid-sckkx6r4> <article class="prose max-w-none" data-astro-cid-sckkx6r4>  <div class="prose max-w-none"> <h1>Full Test Case</h1> <h1 id="solvencyproof-test-cases-documentation">SolvencyProof Test Cases Documentation</h1>
+<h2 id="overview">Overview</h2>
+<p>Test coverage for the SolvencyProof smart contract system, focusing on market scenarios and risk management.</p>
+<h2 id="test-environment">Test Environment</h2>
+<ul>
+<li>Network: Hardhat</li>
+<li>Compiler: Solidity 0.8.x</li>
+<li>Test Framework: Mocha/Chai</li>
+<li>Oracle Type: Mock Price Oracle</li>
+</ul>
+<h2 id="test-categories">Test Categories</h2>
+<ol>
+<li><a href="#market-crash-scenarios">Market Crash Scenarios</a></li>
+<li><a href="#volatility-analysis">Volatility Analysis</a></li>
+<li><a href="#complex-asset-management">Complex Asset Management</a></li>
+<li><a href="#system-health-monitoring">System Health Monitoring</a></li>
+</ol>
+<h2 id="market-crash-scenarios">Market Crash Scenarios</h2>
+<h3 id="test-case-rapid-price-movement">Test Case: Rapid Price Movement</h3>
+<p><strong>Objective</strong>: Verify system behavior during sudden market crashes</p>
+<p><strong>Initial Conditions</strong>:</p>
+<ul>
+<li>ETH Price: $2000</li>
+<li>BTC Price: $35000</li>
+<li>Health Factor: 200%</li>
+<li>Status: Solvent</li>
+</ul>
+<p><strong>Actions</strong>:</p>
+<ol>
+<li>Simulate 80% ETH price drop</li>
+<li>Simulate 70% BTC price drop</li>
+<li>Update asset values</li>
+<li>Verify solvency status</li>
+</ol>
+<p><strong>Expected Results</strong>:</p>
+<ul>
+<li>Health Factor &#x3C; 105%</li>
+<li>Solvency Status: False</li>
+<li>Emergency Protocols: Activated</li>
+</ul>
+<h3 id="initial-state-vs-final-state">Initial State vs Final State</h3>
+<p><img src="/images/diagrams/versus.svg" alt="Versus"></p>
+<h3 id="solvency-metrics-during-crash">Solvency Metrics During Crash</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Metric</th><th>Value</th><th>Status</th></tr></thead><tbody><tr><td>Is Solvent</td><td>false</td><td>❌ Failed</td></tr><tr><td>Health Factor</td><td>0.03%</td><td>🚨 Critical</td></tr><tr><td>Updated At</td><td>2025-01-28T13:58:45.000Z</td><td>Timestamp</td></tr></tbody></table>
+<h2 id="volatility-analysis">Volatility Analysis</h2>
+<h3 id="test-case-price-movement-tracking">Test Case: Price Movement Tracking</h3>
+<p><strong>Steps Executed</strong>:
+<img src="/images/diagrams/price-movement-tracking-steps.svg" alt="price-movement-tracking"></p>
+<h3 id="price-movement-tracking">Price Movement Tracking</h3>
+<p><img src="/images/diagrams/price-movement-tracking.svg" alt="price-movement-tracking"></p>
+<h3 id="price-evolution-summary">Price Evolution Summary</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Step</th><th>ETH Price</th><th>BTC Price</th><th>Change %</th><th>Health Status</th></tr></thead><tbody><tr><td>0</td><td>$2000.00</td><td>$35000.00</td><td>-</td><td>✅ Healthy</td></tr><tr><td>1</td><td>$2160.00</td><td>$37800.00</td><td>+8.41%</td><td>✅ Healthy</td></tr><tr><td>2</td><td>$2180.00</td><td>$38150.00</td><td>+9.09%</td><td>✅ Healthy</td></tr><tr><td>3</td><td>$2020.00</td><td>$35350.00</td><td>+1.41%</td><td>⚠️ Warning</td></tr><tr><td>4</td><td>$1840.00</td><td>$32200.00</td><td>-7.57%</td><td>🚫 Critical</td></tr></tbody></table>
+<h3 id="detailed-price-changes">Detailed Price Changes</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Step</th><th>ETH Price</th><th>ETH Δ</th><th>BTC Price</th><th>BTC Δ</th><th>Ratio</th><th>Ratio Δ</th></tr></thead><tbody><tr><td>0</td><td>$2000.00</td><td>-</td><td>$35000.00</td><td>-</td><td>200.00%</td><td>-</td></tr><tr><td>1</td><td>$2160.00</td><td>+$160.00</td><td>$37800.00</td><td>+$2800.00</td><td>216.00%</td><td>+16.00%</td></tr><tr><td>2</td><td>$2180.00</td><td>+$20.00</td><td>$38150.00</td><td>+$350.00</td><td>218.00%</td><td>+2.00%</td></tr><tr><td>3</td><td>$2020.00</td><td>-$160.00</td><td>$35350.00</td><td>-$2800.00</td><td>202.00%</td><td>-16.00%</td></tr><tr><td>4</td><td>$1840.00</td><td>-$180.00</td><td>$32200.00</td><td>-$3150.00</td><td>184.00%</td><td>-18.00%</td></tr></tbody></table>
+<h3 id="volatility-measurements">Volatility Measurements</h3>
+<p><img src="/images/diagrams/volatility-measurements.svg" alt="volatility-measurements"></p>
+<h2 id="volatility-analysis-implementation">Volatility Analysis Implementation</h2>
+<h3 id="mathematical-model-application">Mathematical Model Application</h3>
+<ol>
+<li>
+<p><strong>Solvency Ratio (SR) Calculation</strong></p>
+<pre><code class="language-math">SR = (TA / TL) × 100
+</code></pre>
+<p>Applied in test case:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="javascript"><code><span class="line"><span style="color:#E1E4E8">Step </span><span style="color:#79B8FF">0</span><span style="color:#E1E4E8">: (</span><span style="color:#79B8FF">2000</span><span style="color:#E1E4E8"> × ETH_qty </span><span style="color:#F97583">+</span><span style="color:#79B8FF"> 35000</span><span style="color:#E1E4E8"> × BTC_qty) </span><span style="color:#F97583">/</span><span style="color:#79B8FF"> TL</span><span style="color:#F97583"> =</span><span style="color:#79B8FF"> 200</span><span style="color:#F97583">%</span></span>
+<span class="line"><span style="color:#E1E4E8">Step </span><span style="color:#79B8FF">1</span><span style="color:#E1E4E8">: (</span><span style="color:#79B8FF">2160</span><span style="color:#E1E4E8"> × ETH_qty </span><span style="color:#F97583">+</span><span style="color:#79B8FF"> 37800</span><span style="color:#E1E4E8"> × BTC_qty) </span><span style="color:#F97583">/</span><span style="color:#79B8FF"> TL</span><span style="color:#F97583"> =</span><span style="color:#79B8FF"> 216</span><span style="color:#F97583">%</span></span>
+<span class="line"></span></code></pre>
+</li>
+<li>
+<p><strong>Risk-Adjusted Health Factor</strong></p>
+<pre><code class="language-math">HF = (∑(Ai × Pi × Wi)) / (∑(Li × Pi × Ri))
+</code></pre>
+<p>Test implementation:</p>
+<ul>
+<li>ETH Weight (Wi): 0.8</li>
+<li>BTC Weight (Wi): 0.7</li>
+<li>Risk Factor (Ri): 1.2</li>
+</ul>
+</li>
+<li>
+<p><strong>Volatility Calculation</strong></p>
+<pre><code class="language-math">σ = √(∑(rt - μ)²/n)
+</code></pre>
+<p>Where:</p>
+<ul>
+<li>rt = return at time t</li>
+<li>μ = average return</li>
+<li>n = number of observations</li>
+</ul>
+<p>Test Results:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Step</th><th>Volatility</th><th>Calculation</th></tr></thead><tbody><tr><td>0</td><td>0%</td><td>Initial state</td></tr><tr><td>1</td><td>8.41%</td><td>√((0.08)² / 1)</td></tr><tr><td>2</td><td>9.09%</td><td>√((0.08² + 0.09²) / 2)</td></tr><tr><td>3</td><td>1.41%</td><td>√((0.08² + 0.09² + 0.014²) / 3)</td></tr><tr><td>4</td><td>-7.57%</td><td>Final negative swing</td></tr></tbody></table>
+</li>
+</ol>
+<h3 id="price-movement-analysis">Price Movement Analysis</h3>
+<h2 id="complex-asset-management">Complex Asset Management</h2>
+<h3 id="test-case-multi-asset-portfolio">Test Case: Multi-Asset Portfolio</h3>
+<p><strong>Portfolio Composition</strong>:</p>
+<ul>
+<li>100 ETH</li>
+<li>5 BTC</li>
+<li>500k USDC</li>
+<li>1000 LP Tokens</li>
+<li>50k Protocol Tokens</li>
+</ul>
+<p><strong>Liability Structure</strong>:</p>
+<ul>
+<li>400k USDC</li>
+<li>300k DAI</li>
+<li>50 ETH</li>
+</ul>
+<p><strong>Validation Criteria</strong>:</p>
+<ul>
+<li>Solvency Ratio > 105%</li>
+<li>All asset prices updated</li>
+<li>Correct liability calculation</li>
+</ul>
+<h2 id="system-health-monitoring">System Health Monitoring</h2>
+<h3 id="performance-metrics">Performance Metrics</h3>
+<p><img src="/images/diagrams/performance-metrics.svg" alt="performance-metrics"></p>
+<h2 id="risk-threshold-breaches">Risk Threshold Breaches</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Stage</th><th>Threshold</th><th>Action Taken</th><th>Duration</th></tr></thead><tbody><tr><td>Healthy</td><td>>120%</td><td>Normal Operations</td><td>Steps 0-2</td></tr><tr><td>Warning</td><td>110-120%</td><td>Risk Monitoring</td><td>Step 3</td></tr><tr><td>Critical</td><td>&#x3C;105%</td><td>Emergency Stop</td><td>Step 4</td></tr></tbody></table>
+<h3 id="system-response-timeline">System Response Timeline</h3>
+<p><img src="/images/diagrams/system-response-timeline.svg" alt="system-response-timeline"></p>
+<h2 id="test-coverage-summary">Test Coverage Summary</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Component</th><th>Coverage</th><th>Status</th></tr></thead><tbody><tr><td>Price Updates</td><td>100%</td><td>✅</td></tr><tr><td>Solvency Calculations</td><td>100%</td><td>✅</td></tr><tr><td>Risk Alerts</td><td>100%</td><td>✅</td></tr><tr><td>Oracle Integration</td><td>100%</td><td>✅</td></tr><tr><td>Emergency Controls</td><td>100%</td><td>✅</td></tr></tbody></table>
+<h2 id="key-findings-and-recommendations">Key Findings and Recommendations</h2>
+<h3 id="strengths">Strengths</h3>
+<ol>
+<li>
+<p><strong>Robust Price Tracking</strong></p>
+<ul>
+<li>Accurate price updates</li>
+<li>Proper historical data storage</li>
+<li>Efficient volatility handling</li>
+</ul>
+</li>
+<li>
+<p><strong>Risk Management</strong></p>
+<ul>
+<li>Quick response to market crashes</li>
+<li>Proper threshold implementations</li>
+<li>Clear warning systems</li>
+</ul>
+</li>
+<li>
+<p><strong>System Performance</strong></p>
+<ul>
+<li>Optimal gas usage</li>
+<li>Quick state updates</li>
+<li>Reliable oracle integration</li>
+</ul>
+</li>
+</ol>
+<h3 id="areas-for-monitoring">Areas for Monitoring</h3>
+<ol>
+<li>
+<p><strong>High Volatility Periods</strong></p>
+<ul>
+<li>Monitor system during >20% price swings</li>
+<li>Verify emergency protocol activation</li>
+<li>Track gas costs during high activity</li>
+</ul>
+</li>
+<li>
+<p><strong>Multi-Asset Scenarios</strong></p>
+<ul>
+<li>Complex portfolio calculations</li>
+<li>Cross-asset risk assessment</li>
+<li>Liability management efficiency</li>
+</ul>
+</li>
+</ol>
+<h2 id="conclusion">Conclusion</h2>
+<p>The test suite demonstrates robust system behavior across various market conditions, with particular strength in:</p>
+<ul>
+<li>Market crash handling</li>
+<li>Volatility tracking</li>
+<li>Complex portfolio management</li>
+<li>Emergency response systems</li>
+</ul>
+<h2 id="test-execution-results">Test Execution Results</h2>
+<h3 id="volatility-tracking-test-results">Volatility Tracking Test Results</h3>
+<p><img src="/images/test-results/volatility-tracking-summary.png" alt="Volatility Tracking Summary"></p>
+<p><em>Real test execution showing volatility tracking over 5 price movement steps with detailed metrics.</em></p>
+<h3 id="price-changes-analysis">Price Changes Analysis</h3>
+<p><img src="/images/test-results/price-changes-steps.png" alt="Price Changes Steps"></p>
+<p><em>Step-by-step price change analysis showing ETH and BTC price movements and their impact on solvency ratios.</em></p>
+<h3 id="complete-solvencyproof-test-execution">Complete SolvencyProof Test Execution</h3>
+<p><img src="/images/test-results/solvency-proof-test-results.png" alt="SolvencyProof Test Results"></p>
+<p><em>Comprehensive test results showing market crash scenarios, asset/liability management, and system responses.</em></p> </div>  </article> <footer class="mt-20 pt-8 border-t border-[#e3e8ee] flex justify-between text-sm text-[#4f566b]" data-astro-cid-sckkx6r4> <p data-astro-cid-sckkx6r4>&copy; 2025 ERC-7893 Standard. Open Source.</p> <a href="#" class="hover:text-[#635bff]" data-astro-cid-sckkx6r4>Back to top</a> </footer> </div> </main> </div> </body></html>
