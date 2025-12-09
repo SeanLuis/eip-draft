@@ -1,5 +1,5 @@
 {
-  "name": "erc-7893-solvency-proof",
+  "name": "erc-7893",
   "version": "1.0.0",
   "description": "ERC-7893 DeFi Protocol Solvency Proof Implementation",
   "imports": {

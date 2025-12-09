@@ -23,7 +23,7 @@ for file in ../assets/erc-7893/docs/*.md; do
     echo "---"
     echo ""
     # Fix image paths with base URL
-    sed 's|\.\./images/|/eip-draft/images/|g' "$file"
+    sed 's|\.\./images/|/erc-7893/images/|g' "$file"
   } > "src/content/docs/$filename"
 done
 

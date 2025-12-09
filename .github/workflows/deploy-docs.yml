@@ -45,7 +45,7 @@ jobs:
               echo "title: \"$title\""
               echo "---"
               echo ""
-              sed 's|\.\./images/|/eip-draft/images/|g' "$file"
+              sed 's|\.\./images/|/erc-7893/images/|g' "$file"
             } > "src/content/docs/$filename"
           done
 
