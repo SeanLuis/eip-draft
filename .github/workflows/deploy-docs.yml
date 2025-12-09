@@ -5,24 +5,15 @@ on:
     branches: [master]
     paths:
       - 'documentation-site/**'
+      - 'assets/erc-7893/**'
       - '.github/workflows/deploy-docs.yml'
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./documentation-site
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,6 +29,7 @@ jobs:
           version: 8
 
       - name: Copy and process assets
+        working-directory: ./documentation-site
         run: |
           # Copy images
           mkdir -p public/images
@@ -53,29 +45,21 @@ jobs:
               echo "title: \"$title\""
               echo "---"
               echo ""
-              # Fix image paths: ../images/ -> /images/
               sed 's|\.\./images/|/images/|g' "$file"
             } > "src/content/docs/$filename"
           done
 
       - name: Install dependencies
+        working-directory: ./documentation-site
         run: pnpm install
 
       - name: Build
+        working-directory: ./documentation-site
         run: pnpm run build
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./documentation-site/dist
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./documentation-site/dist
+          publish_branch: gh-pages
