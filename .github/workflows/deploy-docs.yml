@@ -35,7 +35,7 @@ jobs:
           mkdir -p public/images
           cp -r ../assets/erc-7893/images/* public/images/
           
-          # Copy and process docs (add frontmatter, fix image paths)
+          # Copy and process docs (add frontmatter, fix image paths with base URL)
           mkdir -p src/content/docs
           for file in ../assets/erc-7893/docs/*.md; do
             filename=$(basename "$file")
@@ -45,7 +45,7 @@ jobs:
               echo "title: \"$title\""
               echo "---"
               echo ""
-              sed 's|\.\./images/|/images/|g' "$file"
+              sed 's|\.\./images/|/eip-draft/images/|g' "$file"
             } > "src/content/docs/$filename"
           done
 

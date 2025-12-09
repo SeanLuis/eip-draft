@@ -4,7 +4,7 @@ import tailwind from '@astrojs/tailwind';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://seanluis.github.io',
-  base: '/eip-draft',
+  base: '/eip-draft/',
   integrations: [
     tailwind({
       applyBaseStyles: false,

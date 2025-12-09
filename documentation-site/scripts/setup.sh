@@ -22,8 +22,8 @@ for file in ../assets/erc-7893/docs/*.md; do
     echo "title: \"$title\""
     echo "---"
     echo ""
-    # Fix image paths
-    sed 's|\.\./images/|/images/|g' "$file"
+    # Fix image paths with base URL
+    sed 's|\.\./images/|/eip-draft/images/|g' "$file"
   } > "src/content/docs/$filename"
 done
 
