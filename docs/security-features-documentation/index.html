@@ -75,6 +75,15 @@ Test Cases
 <li>Transparency about data freshness</li>
 </ul>
 <p><strong>Real-world protection:</strong> Prevents decisions based on outdated information.</p>
+<h3 id="-historical-data-rate-limiting">🔒 Historical Data Rate Limiting</h3>
+<p><strong>Purpose:</strong> Prevents spam entries in historical data with MIN_ENTRY_INTERVAL (1 hour) and bounds storage with MAX_HISTORY_ENTRIES (8760 entries ~1 year).</p>
+<p><strong>Test scenario:</strong></p>
+<ul>
+<li>Rapid updates only create one historical entry per hour</li>
+<li>Historical storage is bounded to prevent unbounded growth</li>
+<li><code>getHistoricalDataInfo()</code> provides transparency about storage limits</li>
+</ul>
+<p><strong>Real-world protection:</strong> Prevents storage spam attacks and ensures predictable gas costs for historical queries.</p>
 <h3 id="-multi-oracle-consensus">🔒 Multi-Oracle Consensus</h3>
 <p><strong>Purpose:</strong> Price validation across multiple sources.</p>
 <p><strong>Test scenario:</strong></p>
@@ -132,7 +141,19 @@ Test Cases
 
 
 
-<table><thead><tr><th>Parameter</th><th>Value</th><th>Real-World Reference</th><th>Status</th></tr></thead><tbody><tr><td>Critical Ratio</td><td>102%</td><td>Aave V3 WBTC threshold</td><td>✅ Validated</td></tr><tr><td>Min Solvency</td><td>105%</td><td>Compound V3 close factor</td><td>✅ Validated</td></tr><tr><td>Price Deviation</td><td>5%</td><td>Chainlink standard</td><td>✅ Validated</td></tr><tr><td>Circuit Breaker</td><td>20%</td><td>NYSE/ERC-7265</td><td>✅ Validated</td></tr><tr><td>Rate Limiting</td><td>5 blocks</td><td>~1 min cooldown</td><td>✅ Validated</td></tr><tr><td>Max Tokens</td><td>50</td><td>Gas limit optimization</td><td>✅ Validated</td></tr></tbody></table>
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Parameter</th><th>Value</th><th>Real-World Reference</th><th>Status</th></tr></thead><tbody><tr><td>Critical Ratio</td><td>102%</td><td>Aave V3 WBTC threshold</td><td>✅ Validated</td></tr><tr><td>Min Solvency</td><td>105%</td><td>Compound V3 close factor</td><td>✅ Validated</td></tr><tr><td>Price Deviation</td><td>5%</td><td>Chainlink standard</td><td>✅ Validated</td></tr><tr><td>Circuit Breaker</td><td>20%</td><td>NYSE/ERC-7265</td><td>✅ Validated</td></tr><tr><td>Rate Limiting</td><td>5 blocks</td><td>~1 min cooldown</td><td>✅ Validated</td></tr><tr><td>Max Tokens</td><td>50</td><td>Gas limit optimization</td><td>✅ Validated</td></tr><tr><td>Min Entry Interval</td><td>3600s</td><td>1 hour between history entries</td><td>✅ Validated</td></tr><tr><td>Max History Entries</td><td>8760</td><td>~1 year of hourly data</td><td>✅ Validated</td></tr></tbody></table>
 <h2 id="user-protection-summary">User Protection Summary</h2>
 <p>Users are protected against:</p>
 <ul>
@@ -161,9 +182,9 @@ Test Cases
 <p>The tests demonstrate real protection scenarios and validate that all security mechanisms work as intended for production use.</p>
 <h2 id="security-test-results">Security Test Results</h2>
 <h3 id="security-features-status-summary">Security Features Status Summary</h3>
-<p><img src="/erc-7893/images/test-results/security-features-summary.png" alt="Security Features Summary"></p>
+<p><img src="/images/test-results/security-features-summary.png" alt="Security Features Summary"></p>
 <p><em>Real-time security features status showing all 8 protection mechanisms active and operational, including access control, rate limiting, DoS protection, circuit breaker, emergency controls, oracle staleness detection, price validation, and historical data management.</em></p>
 <h3 id="security-parameters-configuration">Security Parameters Configuration</h3>
-<p><img src="/erc-7893/images/test-results/security-parameters-table.png" alt="Security Parameters Table"></p>
+<p><img src="/images/test-results/security-parameters-table.png" alt="Security Parameters Table"></p>
 <p><em>Production-validated security parameters with their real-world values: 5% max price deviation, 50 token limit, 1-hour staleness threshold, 20% circuit breaker, and 5-block rate limiting for optimal protection.</em></p>
 <p>These screenshots demonstrate that all security features are properly implemented and working together to provide comprehensive protection for users of the ERC-7893 standard.</p> </div>  </article> <footer class="mt-20 pt-8 border-t border-[#e3e8ee] flex justify-between text-sm text-[#4f566b]" data-astro-cid-sckkx6r4> <p data-astro-cid-sckkx6r4>&copy; 2025 ERC-7893 Standard. Open Source.</p> <a href="#" class="hover:text-[#635bff]" data-astro-cid-sckkx6r4>Back to top</a> </footer> </div> </main> </div> </body></html>
