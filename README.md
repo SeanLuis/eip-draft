@@ -53,7 +53,7 @@ The `ISolvencyProof` interface provides a standardized, on-chain mechanism for D
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119 and RFC 8174.
 
-![main](../assets/eip-7893/images/diagrams/main.svg)
+![main](./assets/erc-7893/images/diagrams/main.svg)
 
 ### Core Interface Requirements
 
@@ -443,7 +443,7 @@ Testing has confirmed that:
 3. State updates maintain consistency
 4. Ratio limits are effective for early detection
 
-![risk-thresholds](../assets/eip-7893/images/diagrams/risk-thresholds.svg)
+![risk-thresholds](./assets/erc-7893/images/diagrams/risk-thresholds.svg)
 
 ### Risk Assessment Framework
 
@@ -456,7 +456,7 @@ The standard implements a multi-tiered risk assessment system:
 
 2. Threshold Levels:
 
-![threshold-levels](../assets/eip-7893/images/diagrams/threshold-levels.svg)
+![threshold-levels](./assets/erc-7893/images/diagrams/threshold-levels.svg)
 
 ### Oracle Integration (Optional)
 
@@ -472,7 +472,7 @@ This standard intentionally leaves oracle implementation flexible. Protocols MAY
    - TWAP implementations
    - Medianized price feeds
 
-![oracle-integration](../assets/eip-7893/images/diagrams/oracle-integration.svg)
+![oracle-integration](./assets/erc-7893/images/diagrams/oracle-integration.svg)
 
 ### Implementation Requirements
 
@@ -727,4 +727,4 @@ All security parameters in the reference implementation have been validated agai
 
 ## Copyright
 
-Copyright and related rights waived via [CC0](../LICENSE.md).
+Copyright and related rights waived via [CC0](./LICENSE.md).
