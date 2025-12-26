@@ -42,8 +42,11 @@ contract SolvencyProof is ISolvencyProof, AccessControl, ReentrancyGuard {
     /// @notice Rate limiting cooldown in blocks
     uint256 private constant UPDATE_COOLDOWN = 5;
     
-    /// @notice Maximum historical entries to prevent unbounded growth
+    /// @notice Maximum historical entries to prevent unbounded growth (~1 year with hourly entries)
     uint256 private constant MAX_HISTORY_ENTRIES = 8760;
+
+    /// @notice Minimum time between historical entries (1 hour) to prevent spam
+    uint256 private constant MIN_ENTRY_INTERVAL = 3600;
     
     // === Roles for Access Control ===
     bytes32 public constant ORACLE_ROLE = keccak256("ORACLE_ROLE");
@@ -98,6 +101,9 @@ contract SolvencyProof is ISolvencyProof, AccessControl, ReentrancyGuard {
     
     /// @notice Array storing historical solvency metrics
     HistoricalMetric[] private metricsHistory;
+
+    /// @notice Last timestamp when historical data was recorded
+    uint256 private lastHistoricalEntry;
 
     // === Events ===
     /// @notice Emitted when an oracle's authorization status changes
@@ -210,9 +216,9 @@ contract SolvencyProof is ISolvencyProof, AccessControl, ReentrancyGuard {
     }
 
     /// @inheritdoc ISolvencyProof
-    function getSolvencyHistory(uint256 startTime, uint256 endTime) 
-        external 
-        view 
+    function getSolvencyHistory(uint256 startTime, uint256 endTime)
+        external
+        view
         returns (
             uint256[] memory timestamps,
             uint256[] memory ratios,
@@ -220,22 +226,27 @@ contract SolvencyProof is ISolvencyProof, AccessControl, ReentrancyGuard {
             ProtocolLiabilities[] memory liabilities
         )
     {
+        // First pass: count matching entries
         uint256 count = 0;
         for (uint256 i = 0; i < metricsHistory.length; i++) {
-            if (metricsHistory[i].timestamp >= startTime && 
+            if (metricsHistory[i].timestamp >= startTime &&
                 metricsHistory[i].timestamp <= endTime) {
                 count++;
+                // Gas optimization: break early if we hit reasonable limits
+                if (count >= 100) break; // Max 100 entries per query
             }
         }
 
+        // Allocate arrays with exact size needed
         timestamps = new uint256[](count);
         ratios = new uint256[](count);
         assets = new ProtocolAssets[](count);
         liabilities = new ProtocolLiabilities[](count);
-        uint256 index = 0;
 
+        // Second pass: populate arrays
+        uint256 index = 0;
         for (uint256 i = 0; i < metricsHistory.length && index < count; i++) {
-            if (metricsHistory[i].timestamp >= startTime && 
+            if (metricsHistory[i].timestamp >= startTime &&
                 metricsHistory[i].timestamp <= endTime) {
                 timestamps[index] = metricsHistory[i].timestamp;
                 ratios[index] = metricsHistory[i].solvencyRatio;
@@ -404,6 +415,36 @@ contract SolvencyProof is ISolvencyProof, AccessControl, ReentrancyGuard {
         );
     }
 
+    /**
+     * @notice Get information about available historical data
+     * @return totalEntries Total number of historical entries stored
+     * @return maxEntries Maximum number of entries that can be stored
+     * @return oldestTimestamp Timestamp of the oldest available entry (0 if no entries)
+     * @return newestTimestamp Timestamp of the newest available entry (0 if no entries)
+     * @return minInterval Minimum interval between historical entries in seconds
+     */
+    function getHistoricalDataInfo() external view returns (
+        uint256 totalEntries,
+        uint256 maxEntries,
+        uint256 oldestTimestamp,
+        uint256 newestTimestamp,
+        uint256 minInterval
+    ) {
+        totalEntries = metricsHistory.length;
+        maxEntries = MAX_HISTORY_ENTRIES;
+        minInterval = MIN_ENTRY_INTERVAL;
+
+        if (totalEntries > 0) {
+            oldestTimestamp = metricsHistory[0].timestamp;
+            newestTimestamp = metricsHistory[totalEntries - 1].timestamp;
+        } else {
+            oldestTimestamp = 0;
+            newestTimestamp = 0;
+        }
+
+        return (totalEntries, maxEntries, oldestTimestamp, newestTimestamp, minInterval);
+    }
+
     // === Internal Functions ===
     /**
      * @notice Calculates current solvency ratio
@@ -452,22 +493,26 @@ contract SolvencyProof is ISolvencyProof, AccessControl, ReentrancyGuard {
             emit RiskAlert("WARNING", ratio, WARNING_RATIO, block.timestamp);
         }
         
-        // Store historical data with bounds
-        if (metricsHistory.length >= MAX_HISTORY_ENTRIES) {
-            // Remove oldest entry (shift array)
-            for (uint256 i = 0; i < metricsHistory.length - 1; i++) {
-                metricsHistory[i] = metricsHistory[i + 1];
+        // Store historical data with rate limiting and bounds
+        if (block.timestamp >= lastHistoricalEntry + MIN_ENTRY_INTERVAL) {
+            if (metricsHistory.length >= MAX_HISTORY_ENTRIES) {
+                // Remove oldest entry (shift array) - TODO: Optimize this with circular buffer
+                for (uint256 i = 0; i < metricsHistory.length - 1; i++) {
+                    metricsHistory[i] = metricsHistory[i + 1];
+                }
+                metricsHistory.pop();
             }
-            metricsHistory.pop();
+
+            metricsHistory.push(HistoricalMetric({
+                timestamp: block.timestamp,
+                solvencyRatio: ratio,
+                assets: currentAssets,
+                liabilities: currentLiabilities,
+                updatedBy: msg.sender
+            }));
+
+            lastHistoricalEntry = block.timestamp;
         }
-        
-        metricsHistory.push(HistoricalMetric({
-            timestamp: block.timestamp,
-            solvencyRatio: ratio,
-            assets: currentAssets,
-            liabilities: currentLiabilities,
-            updatedBy: msg.sender
-        }));
     }
 
     /**

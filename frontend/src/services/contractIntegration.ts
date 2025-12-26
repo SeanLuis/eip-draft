@@ -512,9 +512,30 @@ export class SolvencyProofService {
     return Object.fromEntries(prices)
   }
 
+  async getHistoricalDataInfo(): Promise<{
+    totalEntries: bigint;
+    maxEntries: bigint;
+    oldestTimestamp: bigint;
+    newestTimestamp: bigint;
+    minInterval: bigint;
+  }> {
+    if (!this.solvencyProof) throw new Error('Service not initialized')
+
+    const [totalEntries, maxEntries, oldestTimestamp, newestTimestamp, minInterval] =
+      await this.solvencyProof.read.getHistoricalDataInfo()
+
+    return {
+      totalEntries,
+      maxEntries,
+      oldestTimestamp,
+      newestTimestamp,
+      minInterval
+    }
+  }
+
   async getSolvencyHistory(startTime: number, endTime: number) {
     if (!this.solvencyProof) throw new Error('Service not initialized')
-    
+
     try {
         const [timestamps, ratios, assets, liabilities] = await this.solvencyProof.read.getSolvencyHistory([startTime, endTime])
         

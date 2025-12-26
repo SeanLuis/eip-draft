@@ -25,12 +25,21 @@ export interface ProtocolLiabilities {
   timestamp: bigint;
 }
 
+export interface HistoricalDataInfo {
+  totalEntries: bigint;
+  maxEntries: bigint;
+  oldestTimestamp: bigint;
+  newestTimestamp: bigint;
+  minInterval: bigint;
+}
+
 export interface ISolvencyProof extends BaseContract {
   getProtocolAssets: () => Promise<ProtocolAssets>;
   getProtocolLiabilities: () => Promise<ProtocolLiabilities>;
   getSolvencyRatio: () => Promise<bigint>;
   verifySolvency: () => Promise<[boolean, bigint]>;
   getSolvencyHistory: (startTime: bigint, endTime: bigint) => Promise<[bigint[], bigint[]]>;
+  getHistoricalDataInfo: () => Promise<[bigint, bigint, bigint, bigint, bigint]>;
   updateAssets: (tokens: string[], amounts: bigint[], values: bigint[]) => Promise<ContractTransactionResponse>;
   updateLiabilities: (tokens: string[], amounts: bigint[], values: bigint[]) => Promise<ContractTransactionResponse>;
   setOracle: (oracle: string, authorized: boolean) => Promise<ContractTransactionResponse>;

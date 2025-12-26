@@ -12,7 +12,7 @@ const config: HardhatUserConfig = {
         enabled: true,
         runs: 200
       },
-      viaIR: true, // Enable IR compilation for complex contracts
+      viaIR: true,
     },
   },
   networks: {
