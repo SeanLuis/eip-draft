@@ -5,9 +5,10 @@ import {
     SolvencyProof,
     MockToken,
     MockPriceOracle 
-} from "../typechain-types";
+} from "@/typechain-types";
 import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 
 /**
  * Constants for price simulation in USD terms
@@ -285,17 +286,17 @@ describe("SolvencyProof Real World Scenarios", function () {
 
             const priceHistory = [];
     
-            // Record exactly 5 price points
+            // Record exactly 5 price points with MIN_ENTRY_INTERVAL consideration
             for (let i = 0; i < 5; i++) {
                 await simulateMarketVolatility(context, i);
-                
+
                 // Capture prices before updating metrics
                 const currentEthPrice = await context.mockPriceOracle.getPrice(await context.weth.getAddress());
                 const currentBtcPrice = await context.mockPriceOracle.getPrice(await context.wbtc.getAddress());
-                
+
                 const tx = await updateProtocolMetrics(context);
                 await tx.wait();
-                
+
                 // Store prices with their corresponding update
                 priceHistory.push({
                     step: i,
@@ -304,9 +305,8 @@ describe("SolvencyProof Real World Scenarios", function () {
                     timestamp: await time.latest()
                 });
 
-                if (i < 4) {
-                    await time.increase(3600);
-                }
+                // Always advance time by at least MIN_ENTRY_INTERVAL (3600 seconds) for next historical entry
+                await time.increase(3600);
             }
 
             const endTime = await time.latest();
@@ -368,6 +368,76 @@ describe("SolvencyProof Real World Scenarios", function () {
             });
             
             expect(volatilityDetected, "Should detect price volatility in ratios").to.be.true;
+        });
+
+        it("Should respect MIN_ENTRY_INTERVAL for historical data entries", async function() {
+            // NOTE: Don't call setupInitialProtocolState here - it sets up massive assets
+            // that would trigger circuit breaker when updateProtocolMetrics uses smaller amounts
+
+            // Get initial historical data info
+            const [
+                initialTotalEntries,
+                maxEntries,
+                initialOldestTimestamp,
+                initialNewestTimestamp,
+                minInterval
+            ] = await context.solvencyProof.getHistoricalDataInfo();
+
+            console.log("Initial historical data info:", {
+                totalEntries: initialTotalEntries,
+                maxEntries,
+                minInterval
+            });
+
+            // Verify MIN_ENTRY_INTERVAL is correctly reported
+            expect(minInterval).to.equal(3600, "MIN_ENTRY_INTERVAL should be 3600 seconds");
+
+            // Record first entry (starts with 1 ETH baseline)
+            await updateProtocolMetrics(context);
+
+            // Try to record second entry immediately (should be prevented by MIN_ENTRY_INTERVAL)
+            const beforeSecondUpdate = await time.latest();
+            await updateProtocolMetrics(context);
+            const afterSecondUpdate = await time.latest();
+
+            // Get historical data info after attempts
+            const [
+                totalEntries,
+                ,
+                oldestTimestamp,
+                newestTimestamp,
+            ] = await context.solvencyProof.getHistoricalDataInfo();
+
+            console.log("After rapid updates:", {
+                totalEntries,
+                timeDiff: afterSecondUpdate - beforeSecondUpdate
+            });
+
+            // Should still have only 1 entry due to MIN_ENTRY_INTERVAL
+            expect(totalEntries).to.equal(1, "Should have only 1 entry due to rate limiting");
+
+            // Advance time past MIN_ENTRY_INTERVAL and try again
+            await time.increase(3601); // Just over 1 hour
+
+            await updateProtocolMetrics(context);
+
+            const [
+                finalTotalEntries,
+                ,
+                finalOldestTimestamp,
+                finalNewestTimestamp,
+            ] = await context.solvencyProof.getHistoricalDataInfo();
+
+            console.log("After waiting 1 hour:", {
+                finalTotalEntries
+            });
+
+            // Should now have 2 entries
+            expect(finalTotalEntries).to.equal(2, "Should have 2 entries after waiting");
+
+            // Verify timestamps are valid
+            expect(finalOldestTimestamp).to.be.gt(0, "Oldest timestamp should be set");
+            expect(finalNewestTimestamp).to.be.gt(finalOldestTimestamp, "Newest should be after oldest");
         });
     });
 

@@ -76,6 +76,16 @@ This document describes the comprehensive security test suite for ERC-7893, demo
 
 **Real-world protection:** Prevents decisions based on outdated information.
 
+### 🔒 Historical Data Rate Limiting
+**Purpose:** Prevents spam entries in historical data with MIN_ENTRY_INTERVAL (1 hour) and bounds storage with MAX_HISTORY_ENTRIES (8760 entries ~1 year).
+
+**Test scenario:**
+- Rapid updates only create one historical entry per hour
+- Historical storage is bounded to prevent unbounded growth
+- `getHistoricalDataInfo()` provides transparency about storage limits
+
+**Real-world protection:** Prevents storage spam attacks and ensures predictable gas costs for historical queries.
+
 ### 🔒 Multi-Oracle Consensus
 **Purpose:** Price validation across multiple sources.
 
@@ -96,6 +106,8 @@ This document describes the comprehensive security test suite for ERC-7893, demo
 | Circuit Breaker | 20% | NYSE/ERC-7265 | ✅ Validated |
 | Rate Limiting | 5 blocks | ~1 min cooldown | ✅ Validated |
 | Max Tokens | 50 | Gas limit optimization | ✅ Validated |
+| Min Entry Interval | 3600s | 1 hour between history entries | ✅ Validated |
+| Max History Entries | 8760 | ~1 year of hourly data | ✅ Validated |
 
 ## User Protection Summary
 
@@ -132,13 +144,13 @@ The tests demonstrate real protection scenarios and validate that all security m
 
 ### Security Features Status Summary
 
-![Security Features Summary](../images/test-results/security-features-summary.png)
+![Security Features Summary](/images/test-results/security-features-summary.png)
 
 *Real-time security features status showing all 8 protection mechanisms active and operational, including access control, rate limiting, DoS protection, circuit breaker, emergency controls, oracle staleness detection, price validation, and historical data management.*
 
 ### Security Parameters Configuration
 
-![Security Parameters Table](../images/test-results/security-parameters-table.png)
+![Security Parameters Table](/images/test-results/security-parameters-table.png)
 
 *Production-validated security parameters with their real-world values: 5% max price deviation, 50 token limit, 1-hour staleness threshold, 20% circuit breaker, and 5-block rate limiting for optimal protection.*
 

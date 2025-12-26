@@ -18,9 +18,9 @@ interface ISolvencyProof {
      */
     struct ProtocolAssets {
         address[] tokens;    // Addresses of tracked tokens
-        uint256[] amounts;   // Amount of each token
-        uint256[] values;    // Value in ETH of each token amount
-        uint256 timestamp;   // Last update timestamp
+        uint256[] amounts;   // Amount of each token (in token decimals)
+        uint256[] values;    // Value in ETH (18 decimals) of each token amount
+        uint256 timestamp;   // Last update timestamp (Unix timestamp in seconds)
     }
 
     /**
@@ -31,9 +31,9 @@ interface ISolvencyProof {
      */
     struct ProtocolLiabilities {
         address[] tokens;    // Addresses of liability tokens
-        uint256[] amounts;   // Amount of each liability
-        uint256[] values;    // Value in ETH of each liability
-        uint256 timestamp;   // Last update timestamp
+        uint256[] amounts;   // Amount of each liability (in token decimals)
+        uint256[] values;    // Value in ETH (18 decimals) of each liability
+        uint256 timestamp;   // Last update timestamp (Unix timestamp in seconds)
     }
 
     /**
@@ -94,12 +94,13 @@ interface ISolvencyProof {
 
     /**
      * @notice Get historical solvency metrics
-     * @param startTime Start of time range
-     * @param endTime End of time range
-     * @return timestamps Array of historical update timestamps
-     * @return ratios Array of historical solvency ratios
+     * @param startTime Start of time range (Unix timestamp in seconds)
+     * @param endTime End of time range (Unix timestamp in seconds)
+     * @return timestamps Array of historical update timestamps (Unix timestamp in seconds)
+     * @return ratios Array of historical solvency ratios (scaled by 10000)
      * @return assets Array of historical asset states
      * @return liabilities Array of historical liability states
+     * @custom:gas This function may consume significant gas for large time ranges
      */
     function getSolvencyHistory(uint256 startTime, uint256 endTime) 
         external 

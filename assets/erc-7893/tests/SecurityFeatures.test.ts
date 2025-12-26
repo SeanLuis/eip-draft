@@ -1,6 +1,12 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { loadFixture, time } from "@nomicfoundation/hardhat-network-helpers";
+import { 
+    SolvencyProof,
+    MockMultiOracle,
+    MaliciousOracle,
+    MockToken
+} from "@/typechain-types";
 
 /**
  * Security Features Test Suite for ERC-7893 Solvency Proof Standard
@@ -385,46 +391,104 @@ describe("ERC-7893 Security Features & User Protection", function () {
             console.log("\n🛡️  ERC-7893 SECURITY FEATURES SUMMARY");
             console.log("=====================================");
             
-            // 1. Access Control
+            // Collect all security parameters
+            const [
+                maxPriceDeviation,
+                maxTokensPerUpdate,
+                stalenessThreshold,
+                circuitBreakerThreshold,
+                updateCooldown
+            ] = await solvencyProof.getSecurityParameters();
+            
             const oracleRole = await solvencyProof.ORACLE_ROLE();
             const hasRole = await solvencyProof.hasRole(oracleRole, oracle1.address);
-            expect(hasRole).to.be.true;
-            console.log("✅ Role-based Access Control: ACTIVE");
-            
-            // 2. Rate Limiting
-            const [,,,,updateCooldown] = await solvencyProof.getSecurityParameters();
-            expect(updateCooldown).to.equal(5);
-            console.log("✅ Rate Limiting (5 blocks): ACTIVE");
-            
-            // 3. DoS Protection
-            const [,maxTokens,,,] = await solvencyProof.getSecurityParameters();
-            expect(maxTokens).to.equal(50);
-            console.log("✅ DoS Protection (50 token limit): ACTIVE");
-            
-            // 4. Circuit Breaker
-            const [,,,circuitThreshold,] = await solvencyProof.getSecurityParameters();
-            expect(circuitThreshold).to.equal(2000);
-            console.log("✅ Circuit Breaker (20% threshold): ACTIVE");
-            
-            // 5. Emergency Controls
             const [,,guardianAddr] = await solvencyProof.getEmergencyStatus();
-            expect(guardianAddr).to.equal(guardian.address);
-            console.log("✅ Emergency Controls: ACTIVE");
             
-            // 6. Oracle Staleness Detection
-            const [,,stalenessThreshold,,] = await solvencyProof.getSecurityParameters();
-            expect(stalenessThreshold).to.equal(3600);
-            console.log("✅ Oracle Staleness Detection (1 hour): ACTIVE");
-            
-            // 7. Historical Data Bounds
+            // Test historical data functionality
             await solvencyProof.connect(oracle1).updateAssets(
                 [weth.target],
                 [ethers.parseEther("100")],
                 [ethers.parseEther("100")]
             );
+            // Small delay to ensure historical entry is recorded
+            await time.increase(1);
             const history = await solvencyProof.getSolvencyHistory(0, await time.latest());
+            
+            // Create security features table
+            const securityFeatures = [
+                {
+                    'Feature': 'Access Control',
+                    'Status': hasRole ? '✅ ACTIVE' : '❌ INACTIVE',
+                    'Configuration': `Oracle Role: ${hasRole}`,
+                    'Protection': 'Unauthorized access'
+                },
+                {
+                    'Feature': 'Rate Limiting',
+                    'Status': updateCooldown > 0 ? '✅ ACTIVE' : '❌ INACTIVE',
+                    'Configuration': `${updateCooldown} blocks cooldown`,
+                    'Protection': 'Spam/DoS attacks'
+                },
+                {
+                    'Feature': 'DoS Protection',
+                    'Status': maxTokensPerUpdate > 0 ? '✅ ACTIVE' : '❌ INACTIVE',
+                    'Configuration': `${maxTokensPerUpdate} token limit`,
+                    'Protection': 'Resource exhaustion'
+                },
+                {
+                    'Feature': 'Circuit Breaker',
+                    'Status': circuitBreakerThreshold > 0 ? '✅ ACTIVE' : '❌ INACTIVE',
+                    'Configuration': `${Number(circuitBreakerThreshold)/100}% threshold`,
+                    'Protection': 'Market manipulation'
+                },
+                {
+                    'Feature': 'Emergency Controls',
+                    'Status': guardianAddr !== ethers.ZeroAddress ? '✅ ACTIVE' : '❌ INACTIVE',
+                    'Configuration': `Guardian: ${guardianAddr.slice(0,8)}...`,
+                    'Protection': 'Critical situations'
+                },
+                {
+                    'Feature': 'Oracle Staleness',
+                    'Status': stalenessThreshold > 0 ? '✅ ACTIVE' : '❌ INACTIVE',
+                    'Configuration': `${stalenessThreshold}s threshold`,
+                    'Protection': 'Stale data usage'
+                },
+                {
+                    'Feature': 'Price Validation',
+                    'Status': maxPriceDeviation > 0 ? '✅ ACTIVE' : '❌ INACTIVE',
+                    'Configuration': `${Number(maxPriceDeviation)/100}% max deviation`,
+                    'Protection': 'Price manipulation'
+                },
+                {
+                    'Feature': 'Historical Data',
+                    'Status': history.timestamps.length > 0 ? '✅ ACTIVE' : '❌ INACTIVE',
+                    'Configuration': `${history.timestamps.length} records stored`,
+                    'Protection': 'Unbounded growth'
+                }
+            ];
+            
+            console.log("\n📊 Security Features Status:");
+            console.table(securityFeatures);
+            
+            // Security parameters table
+            const parameters = {
+                'Max Price Deviation': `${Number(maxPriceDeviation)/100}%`,
+                'Max Tokens per Update': maxTokensPerUpdate.toString(),
+                'Staleness Threshold': `${stalenessThreshold}s (${Math.floor(Number(stalenessThreshold)/3600)}h)`,
+                'Circuit Breaker': `${Number(circuitBreakerThreshold)/100}%`,
+                'Rate Limiting': `${updateCooldown} blocks (~${Number(updateCooldown)*12}s)`
+            };
+            
+            console.log("\n⚙️  Security Parameters:");
+            console.table(parameters);
+            
+            // Validation assertions
+            expect(hasRole).to.be.true;
+            expect(updateCooldown).to.equal(5);
+            expect(maxTokensPerUpdate).to.equal(50);
+            expect(circuitBreakerThreshold).to.equal(2000);
+            expect(guardianAddr).to.equal(guardian.address);
+            expect(stalenessThreshold).to.equal(3600);
             expect(history.timestamps.length).to.be.greaterThan(0);
-            console.log("✅ Bounded Historical Data: ACTIVE");
             
             console.log("\n🎉 ALL SECURITY FEATURES ARE OPERATIONAL");
             console.log("   Users are protected against:");
@@ -436,6 +500,143 @@ describe("ERC-7893 Security Features & User Protection", function () {
             console.log("   • Stale data usage");
             console.log("   • Unbounded gas consumption");
             console.log("=====================================\n");
+        });
+
+        it("Should provide transparent access to historical data information", async function() {
+            const { solvencyProof, weth, oracle1 } = await loadFixture(deploySecurityFixture);
+
+            console.log("✅ Testing historical data transparency...");
+
+            // === PRUEBA ESTADO VACÍO ===
+            console.log("   📊 Testing empty state...");
+
+            const [
+                initialTotal,
+                maxEntries,
+                initialOldest,
+                initialNewest,
+                minInterval
+            ] = await solvencyProof.getHistoricalDataInfo();
+
+            // Validar estado inicial vacío
+            expect(initialTotal).to.equal(0, "Should start with no historical entries");
+            expect(maxEntries).to.equal(8760, "MAX_HISTORY_ENTRIES should be 8760");
+            expect(minInterval).to.equal(3600, "MIN_ENTRY_INTERVAL should be 3600 seconds");
+            expect(initialOldest).to.equal(0, "Oldest timestamp should be 0 when empty");
+            expect(initialNewest).to.equal(0, "Newest timestamp should be 0 when empty");
+
+            console.log("   ✓ Empty state correctly reported");
+            console.log(`      Max entries allowed: ${maxEntries}`);
+            console.log(`      Min interval between entries: ${minInterval}s (${Number(minInterval)/3600}h)`);
+
+            // === VERIFICA PARÁMETROS DESPUÉS DE AGREGAR DATOS ===
+            console.log("   📈 Testing after adding historical data...");
+
+            // Agregar primera entrada histórica
+            const tx1 = await solvencyProof.connect(oracle1).updateAssets(
+                [weth.target],
+                [ethers.parseEther("100")],
+                [ethers.parseEther("100")]
+            );
+            await tx1.wait();
+
+            await time.increase(1); // Ensure timestamp difference
+
+            const [
+                afterFirstTotal,
+                ,
+                afterFirstOldest,
+                afterFirstNewest,
+            ] = await solvencyProof.getHistoricalDataInfo();
+
+            // Validar después de primera entrada
+            expect(afterFirstTotal).to.equal(1, "Should have 1 historical entry");
+            expect(afterFirstOldest).to.be.gt(0, "Oldest timestamp should be set");
+            expect(afterFirstNewest).to.be.gt(0, "Newest timestamp should be set");
+            expect(afterFirstNewest).to.be.gte(afterFirstOldest, "Newest should be >= oldest");
+
+            console.log("   ✓ First historical entry recorded");
+            console.log(`      Total entries: ${afterFirstTotal}`);
+            console.log(`      Time range: ${afterFirstOldest} - ${afterFirstNewest}`);
+
+            // Agregar segunda entrada después del intervalo mínimo
+            await time.increase(3600); // Esperar MIN_ENTRY_INTERVAL
+            await mineBlocks(6); // Exceed rate limiter cooldown (5 blocks)
+
+            const tx2 = await solvencyProof.connect(oracle1).updateAssets(
+                [weth.target],
+                [ethers.parseEther("200")],
+                [ethers.parseEther("200")]
+            );
+            await tx2.wait();
+
+            await time.increase(1);
+
+            const [
+                afterSecondTotal,
+                ,
+                afterSecondOldest,
+                afterSecondNewest,
+            ] = await solvencyProof.getHistoricalDataInfo();
+
+            // Validar después de segunda entrada
+            expect(afterSecondTotal).to.equal(2, "Should have 2 historical entries");
+            expect(afterSecondOldest).to.equal(afterFirstOldest, "Oldest should remain the same");
+            expect(afterSecondNewest).to.be.gt(afterFirstNewest, "Newest should be updated");
+
+            console.log("   ✓ Second historical entry recorded");
+            console.log(`      Total entries: ${afterSecondTotal}`);
+            console.log(`      Updated time range: ${afterSecondOldest} - ${afterSecondNewest}`);
+
+            // === CONFIRMA LÍMITES RAZONABLES ===
+            console.log("   🔍 Testing bounds and limits...");
+
+            // Verificar límites del sistema
+            expect(maxEntries).to.be.lt(100000, "Max entries should be reasonable (< 100k)");
+            expect(maxEntries).to.be.gt(1000, "Max entries should be substantial (> 1k)");
+            expect(minInterval).to.be.gte(300, "Min interval should be at least 5 minutes");
+            expect(minInterval).to.be.lte(86400, "Min interval should be at most 1 day (86400s)");
+
+            // Verificar que los timestamps sean razonables (dentro de rango esperado)
+            const currentTime = await time.latest();
+            expect(afterSecondNewest).to.be.lte(currentTime + 10, "Newest timestamp should not be in future");
+            expect(afterSecondOldest).to.be.lt(currentTime, "Oldest timestamp should be in past");
+
+            console.log("   ✓ All bounds within reasonable limits");
+            console.log(`      Max entries: ${maxEntries} (within 1k-100k range)`);
+            console.log(`      Min interval: ${minInterval}s (within 5min-1day range)`);
+            console.log(`      Timestamps: ${afterSecondOldest}-${afterSecondNewest} (reasonable range)`);
+
+            // === VERIFICAR FUNCIONALIDAD CON MÚLTIPLES ENTRADAS ===
+            console.log("   🧪 Testing with multiple entries approaching limit...");
+
+            // Simular agregar varias entradas más (sin exceder el tiempo de test)
+            for (let i = 0; i < 3; i++) {
+                await time.increase(3600); // MIN_ENTRY_INTERVAL
+                await mineBlocks(6); // Exceed rate limiter cooldown
+                await solvencyProof.connect(oracle1).updateAssets(
+                    [weth.target],
+                    [ethers.parseEther(`${300 + i * 50}`)],
+                    [ethers.parseEther(`${300 + i * 50}`)]
+                );
+            }
+
+            const [
+                finalTotal,
+                finalMaxEntries,
+                finalOldest,
+                finalNewest,
+            ] = await solvencyProof.getHistoricalDataInfo();
+
+            expect(finalTotal).to.equal(5, "Should have 5 total entries");
+            expect(finalMaxEntries).to.equal(maxEntries, "Max entries should remain constant");
+            expect(finalNewest).to.be.gt(finalOldest, "Time range should be valid");
+
+            console.log("   ✓ Multiple entries handling works correctly");
+            console.log(`      Final count: ${finalTotal}/${finalMaxEntries} entries`);
+            console.log(`      Final range: ${finalOldest} - ${finalNewest}`);
+
+            console.log("✅ Historical data transparency test completed successfully");
         });
     });
 });
